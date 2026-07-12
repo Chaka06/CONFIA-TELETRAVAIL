@@ -15,13 +15,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
+const TITLE = "Confia — Plateforme de télétravail rémunéré";
+const DESCRIPTION =
+  "Confia est une plateforme professionnelle de télétravail rémunéré : missions vérifiées, progression par paliers transparente, retraits sécurisés et parrainage traçable.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(APP_BASE_URL),
   title: {
-    default: "Confia — Plateforme de télétravail rémunéré",
+    default: TITLE,
     template: "%s | Confia",
   },
-  description:
-    "Confia est une plateforme professionnelle de télétravail rémunéré : missions vérifiées, progression par paliers transparente, retraits sécurisés et parrainage traçable.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: APP_BASE_URL,
+    siteName: "Confia",
+    locale: "fr_FR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
