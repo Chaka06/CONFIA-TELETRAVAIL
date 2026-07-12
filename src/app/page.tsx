@@ -11,15 +11,18 @@ export const revalidate = 300;
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: basketTypes } = await supabase
-    .from("tontine_basket_types")
-    .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount")
-    .eq("is_active", true)
-    .order("contribution_amount");
+  const [{ data: basketTypes }, { data: userData }] = await Promise.all([
+    supabase
+      .from("tontine_basket_types")
+      .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount")
+      .eq("is_active", true)
+      .order("contribution_amount"),
+    supabase.auth.getUser(),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader isAuthenticated={!!userData.user} />
       <main className="flex-1">
         <Hero />
         <TrustBadges />

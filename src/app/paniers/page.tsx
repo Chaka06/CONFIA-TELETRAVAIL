@@ -42,7 +42,7 @@ export default async function PaniersPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader isAuthenticated={!!user} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-2xl text-center">

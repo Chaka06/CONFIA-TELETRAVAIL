@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { href: "#securite", label: "Sécurité" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = React.useState(pathname);
@@ -26,10 +26,12 @@ export function SiteHeader() {
     setOpen(false);
   }
 
+  const logoHref = isAuthenticated ? "/tableau-de-bord" : "/";
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center">
+        <Link href={logoHref} className="flex items-center">
           <Logo className="h-7 sm:h-8" priority />
         </Link>
 
@@ -43,17 +45,25 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            render={<Link href="/connexion" />}
-            nativeButton={false}
-            className="hidden sm:inline-flex"
-          >
-            Connexion
-          </Button>
-          <Button render={<Link href="/inscription" />} nativeButton={false} className="hidden sm:inline-flex">
-            Créer un compte
-          </Button>
+          {isAuthenticated ? (
+            <Button render={<Link href="/tableau-de-bord" />} nativeButton={false} className="hidden sm:inline-flex">
+              Tableau de bord
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                render={<Link href="/connexion" />}
+                nativeButton={false}
+                className="hidden sm:inline-flex"
+              >
+                Connexion
+              </Button>
+              <Button render={<Link href="/inscription" />} nativeButton={false} className="hidden sm:inline-flex">
+                Créer un compte
+              </Button>
+            </>
+          )}
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -74,12 +84,20 @@ export function SiteHeader() {
                   </a>
                 ))}
                 <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-                  <Button variant="outline" render={<Link href="/connexion" />} nativeButton={false}>
-                    Connexion
-                  </Button>
-                  <Button render={<Link href="/inscription" />} nativeButton={false}>
-                    Créer un compte
-                  </Button>
+                  {isAuthenticated ? (
+                    <Button render={<Link href="/tableau-de-bord" />} nativeButton={false}>
+                      Tableau de bord
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" render={<Link href="/connexion" />} nativeButton={false}>
+                        Connexion
+                      </Button>
+                      <Button render={<Link href="/inscription" />} nativeButton={false}>
+                        Créer un compte
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
