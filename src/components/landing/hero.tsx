@@ -42,8 +42,8 @@ export function Hero() {
 
           <BlobImage
             variant={1}
-            src="https://f.hellowork.com/edito/sites/3/2025/10/teletravail-etude-demission.jpg"
-            alt="Personne en situation de télétravail"
+            src="https://photos.tf1info.fr/images/613/345/photo-billets-franc-cfa-5ddd11-0@1x.jpeg"
+            alt="Billets de francs CFA"
             className="mx-auto aspect-[4/3] w-full max-w-md shadow-xl shadow-primary/10 lg:max-w-none"
           />
         </div>

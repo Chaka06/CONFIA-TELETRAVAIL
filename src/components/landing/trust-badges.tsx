@@ -1,6 +1,4 @@
-import { FileCheck2, ScrollText, Wallet } from "lucide-react";
-
-import { BlobImage } from "@/components/landing/blob-image";
+import { CreditCard, FileCheck2, ScrollText, Wallet } from "lucide-react";
 
 const BADGES = [
   {
@@ -21,6 +19,12 @@ const BADGES = [
     description:
       "Montants, paliers, commissions et conditions de retrait sont annoncés avant toute action, sans exception.",
   },
+  {
+    icon: CreditCard,
+    title: "Paiements sécurisés",
+    description:
+      "Dépôts et retraits transitent par un agrégateur de paiement, avec traçabilité complète de chaque opération.",
+  },
 ];
 
 export function TrustBadges() {
@@ -36,20 +40,6 @@ export function TrustBadges() {
             <p className="text-sm leading-relaxed text-muted-foreground">{badge.description}</p>
           </div>
         ))}
-
-        <div className="flex flex-col gap-3">
-          <BlobImage
-            variant={3}
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsdQ7neJLPpFY1R44U3KOSDjK_EC0k8zz3FDfUbjJsqyROgTfQSodj73M2&s=10"
-            alt="Paiement sécurisé"
-            className="size-10"
-          />
-          <h3 className="text-sm font-semibold text-foreground">Paiements sécurisés</h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Dépôts et retraits transitent par un agrégateur de paiement, avec traçabilité complète de
-            chaque opération.
-          </p>
-        </div>
       </div>
     </section>
   );
