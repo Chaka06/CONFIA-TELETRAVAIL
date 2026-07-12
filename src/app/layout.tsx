@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
-const TITLE = "Confssa — Plateforme de télétravail rémunéré";
+const TITLE = "Confssa — Tontine en ligne";
 const DESCRIPTION =
-  "Confssa est une plateforme professionnelle de télétravail rémunéré : missions vérifiées, progression par paliers transparente, retraits sécurisés et parrainage traçable.";
+  "Confssa organise votre tontine en ligne : rejoignez un panier de 10 membres, cotisez à date fixe et recevez l'intégralité du gain à votre tour, premier arrivé premier payé.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_BASE_URL),
