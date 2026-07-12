@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Réinitialisation de votre mot de passe</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#eef1f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef1f5; padding: 32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color:#ffffff; border: 1px solid #dde2e9;">
+            <tr>
+              <td style="background-color:#16324f; padding: 24px 28px;">
+                <span style="color:#ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Confia</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 36px 28px 28px;">
+                <h1 style="margin: 0 0 12px; font-size: 19px; color:#111827;">Réinitialisation de votre mot de passe</h1>
+                <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color:#4b5563;">
+                  Vous avez demandé la réinitialisation du mot de passe associé à votre compte Confia. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe. Ce lien est valable une heure.
+                </p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                  <tr>
+                    <td style="background-color:#16324f;">
+                      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reinitialiser-mot-de-passe" style="display:inline-block; padding: 13px 30px; font-size: 14px; font-weight: 600; color:#ffffff; text-decoration:none;">
+                        Réinitialiser mon mot de passe
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin: 0 0 6px; font-size: 13px; line-height: 1.6; color:#6b7280;">
+                  Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+                </p>
+                <p style="margin: 0 0 24px; font-size: 13px; line-height: 1.6; color:#16324f; word-break: break-all;">
+                  {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reinitialiser-mot-de-passe
+                </p>
+
+                <hr style="border: none; border-top: 1px solid #eceef2; margin: 0 0 20px;" />
+
+                <p style="margin: 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
+                  Si vous n'êtes pas à l'origine de cette demande, votre mot de passe actuel reste inchangé — ignorez simplement cet e-mail. Pour toute question de sécurité, contactez notre support.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 18px 28px; background-color:#f7f8fa; border-top: 1px solid #dde2e9;">
+                <p style="margin:0 0 4px; font-size: 12px; color:#9ca3af;">Confia — plateforme professionnelle de télétravail rémunéré.</p>
+                <p style="margin:0; font-size: 12px; color:#c1c6cf;">Cet e-mail vous a été envoyé automatiquement, merci de ne pas y répondre.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
