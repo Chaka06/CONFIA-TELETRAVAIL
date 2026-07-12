@@ -20,8 +20,8 @@ export function Logo({
       <Image
         src="/logo-icon.png"
         alt="Confssa"
-        width={256}
-        height={250}
+        width={178}
+        height={134}
         priority={priority}
         className={cn("h-8 w-auto", className)}
       />
@@ -32,8 +32,8 @@ export function Logo({
     <Image
       src="/logo.png"
       alt="Confssa"
-      width={640}
-      height={212}
+      width={638}
+      height={134}
       priority={priority}
       className={cn("h-8 w-auto", className)}
     />
