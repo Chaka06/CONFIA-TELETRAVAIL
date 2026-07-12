@@ -87,6 +87,10 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
     for (const user of users) {
       await admin.auth.admin.deleteUser(user.id);
     }
+    // Nettoie l'instance créée par ce bloc et celle auto-créée par
+    // fn_start_round ("filling" toujours disponible) — sinon elles
+    // polluent un run suivant sans reset DB (member_count déjà à 10).
+    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
   });
 
   it("10 membres rejoignant et payant leur entrée remplissent le panier et démarrent le round", async () => {
@@ -104,6 +108,7 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
         .rpc("fn_confirm_contribution", {
           p_contribution_id: joinResult!.contribution_id,
           p_provider_reference: `MTX-TEST-${index}`,
+          p_paid_amount: joinResult!.amount,
         })
         .single();
 
@@ -208,6 +213,10 @@ describe("Tontine — impayé, retrait automatique et déclenchement du gain", (
     for (const m of memberships) {
       await admin.auth.admin.deleteUser(m.userId);
     }
+    // Idem : nettoie l'instance créée directement par ce bloc et celle
+    // auto-créée par fn_start_round, pour que le type de panier partagé
+    // reparte propre au run suivant.
+    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
   });
 
   it("retire automatiquement un membre n'ayant pas payé l'échéance de la veille", async () => {
@@ -306,5 +315,87 @@ describe("Tontine — impayé, retrait automatique et déclenchement du gain", (
       .single();
     expect(instanceAfter?.member_count).toBe(8);
     expect(instanceAfter?.status).toBe("paused");
+  });
+});
+
+describe("Tontine — sécurité : une adhésion non payée ne compte jamais comme une place réelle", () => {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  let basketTypeId: string;
+  let user: { id: string; email: string };
+
+  beforeAll(async () => {
+    // Formule dédiée à cette suite (montant volontairement distinct des
+    // formules seedées, pour ne jamais rendre `.single()` ambigu ailleurs),
+    // et pour ne dépendre d'aucune instance partagée laissée par d'autres tests.
+    const { data: basketType } = await admin
+      .from("tontine_basket_types")
+      .insert({ label: "Test isolation sécurité", contribution_amount: 1234, interval_days: 2 })
+      .select("id")
+      .single();
+    basketTypeId = basketType!.id;
+    user = await createConfirmedUser(admin, "unpaid", "700");
+  }, 30000);
+
+  afterAll(async () => {
+    await admin.auth.admin.deleteUser(user.id);
+    await admin.from("tontine_basket_types").delete().eq("id", basketTypeId);
+  });
+
+  it("join_basket seul (sans confirmation de paiement) n'incrémente pas member_count", async () => {
+    // Instance dédiée et vide, pour ne dépendre d'aucun autre test partageant
+    // le même basket_type_id.
+    const { data: freshInstance } = await admin
+      .from("tontine_basket_instances")
+      .insert({ basket_type_id: basketTypeId, status: "filling" })
+      .select("id, member_count")
+      .single();
+
+    const client = await signIn(user.email);
+    const { data: joinResult, error: joinError } = await client
+      .rpc("join_basket", { p_basket_type_id: basketTypeId })
+      .single();
+
+    expect(joinError).toBeNull();
+    expect(joinResult!.basket_instance_id).toBe(freshInstance!.id);
+
+    const { data: instanceAfter } = await admin
+      .from("tontine_basket_instances")
+      .select("member_count")
+      .eq("id", joinResult!.basket_instance_id)
+      .single();
+
+    // La réservation existe (la ligne membership est créée), mais tant que
+    // le paiement n'est pas confirmé, elle ne doit JAMAIS compter comme une
+    // place occupée pour de vrai — sinon un panier pourrait être déclaré
+    // "complet" et démarrer un round sans que tout le monde ait payé.
+    expect(instanceAfter?.member_count).toBe(freshInstance!.member_count);
+    expect(instanceAfter?.member_count).toBe(0);
+  });
+
+  it("fn_confirm_contribution rejette un montant qui ne correspond pas à l'échéance attendue", async () => {
+    const mismatchUser = await createConfirmedUser(admin, "mismatch", "701");
+    const client = await signIn(mismatchUser.email);
+    const { data: joinResult } = await client.rpc("join_basket", { p_basket_type_id: basketTypeId }).single();
+
+    const { error } = await admin.rpc("fn_confirm_contribution", {
+      p_contribution_id: joinResult!.contribution_id,
+      p_provider_reference: "MTX-TEST-MISMATCH",
+      p_paid_amount: 1, // montant frauduleux, très inférieur aux 1000 FCFA attendus
+    });
+
+    expect(error).not.toBeNull();
+    expect(error!.message).toContain("amount_mismatch");
+
+    const { data: contribution } = await admin
+      .from("tontine_contributions")
+      .select("status")
+      .eq("id", joinResult!.contribution_id)
+      .single();
+    expect(contribution?.status).toBe("pending");
+
+    await admin.auth.admin.deleteUser(mismatchUser.id);
   });
 });

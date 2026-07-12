@@ -44,10 +44,13 @@ export async function POST(request: Request) {
         .rpc("fn_confirm_contribution", {
           p_contribution_id: event.contributionId,
           p_provider_reference: event.providerReference,
+          p_paid_amount: event.amount,
         })
         .single();
 
       if (error) {
+        // amount_mismatch : le montant reçu ne correspond pas à l'échéance
+        // attendue — signalé bruyamment plutôt que validé silencieusement.
         console.error("fn_confirm_contribution_failed", error);
         return NextResponse.json({ error: "processing_failed" }, { status: 500 });
       }

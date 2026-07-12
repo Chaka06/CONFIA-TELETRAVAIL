@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminAuditPage() {
+  await requireAdmin();
   const admin = createAdminClient();
 
   const { data: logs } = await admin

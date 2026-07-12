@@ -1,11 +1,13 @@
 import { PiggyBank, Trophy, Users, Wallet } from "lucide-react";
 
+import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminOverviewPage() {
+  await requireAdmin();
   const admin = createAdminClient();
 
   const [{ count: totalUsers }, { count: activeBaskets }, { count: pendingPayouts }, { data: payoutSums }] =

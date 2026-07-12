@@ -162,6 +162,7 @@ class GeniusPayProvider implements PaymentProvider {
           type: "contribution.confirmed",
           contributionId,
           providerReference: payload.data.reference,
+          amount: payload.data.amount,
           providerEventId: payload.id,
         };
       }

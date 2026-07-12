@@ -1,30 +1,27 @@
 -- ============================================================================
--- 0005 — Moteur de la tontine
+-- 0008 — Correctifs de sécurité de l'audit "il faut fouiller toutes les failles"
 -- ============================================================================
--- Modèle retenu :
---  - Rejoindre un panier réserve une place et crée l'occurrence n°1 (le
---    "dépôt d'entrée") en attente de paiement — mais `member_count` ne
---    compte QUE les membres ayant réellement payé (jamais au moment de la
---    réservation). Une réservation non payée dans les 24h est libérée par
---    le balayage quotidien, exactement comme un paiement échoué explicite.
---  - Dès que le panier atteint sa capacité (10) EN MEMBRES PAYÉS, le round
---    démarre : les occurrences n°2 à n°5 sont générées pour tous les
---    membres actifs, espacées de `interval_days`, à partir du lendemain.
---  - Quand l'échéance de la dernière occurrence arrive, le premier membre
---    par ordre d'arrivée (join_order) remporte l'intégralité du round et
---    quitte le portefeuille : une place se libère.
---  - Un nouveau membre qui comble cette place relance un nouveau round
---    (round_number + 1) avec un nouvel échéancier complet pour tout le monde.
---  - Toute cotisation (occurrence 2 à 5) non payée le jour de son échéance
---    entraîne le retrait immédiat du membre concerné.
---  - Envoi des e-mails/Telegram : entièrement géré côté TypeScript ; ces
---    fonctions ne font que les changements d'état + insertion de
---    notifications internes, et renvoient les données nécessaires à l'appelant.
+-- 0005 a été édité sur place en local (pas encore répliqué sur le cloud, qui
+-- l'avait déjà appliqué avant l'audit) : cette migration porte donc le même
+-- correctif sous forme de delta explicite, pour que le cloud rattrape l'état
+-- local vérifié par les tests d'intégration.
+--
+-- Correctifs :
+--  1. member_count n'est plus jamais incrémenté à join_basket (réservation),
+--     uniquement à fn_confirm_contribution (paiement réellement confirmé) —
+--     empêche un round de démarrer sans que tout le monde ait payé.
+--  2. join_basket compte les réservations d'entrée encore valides (<24h,
+--     impayées) dans le calcul de capacité, pour ne jamais survendre un panier.
+--  3. fn_daily_tontine_sweep expire désormais les dépôts d'entrée jamais payés
+--     après 24h (occurrence n°1), qui restaient auparavant bloqués indéfiniment.
+--  4. fn_confirm_contribution vérifie que le montant reçu correspond
+--     exactement à l'échéance attendue (p_paid_amount, nouveau paramètre) —
+--     signature changée, donc l'ancienne version à 2 arguments est supprimée
+--     explicitement avant recréation.
 
--- ----------------------------------------------------------------------------
--- Rejoindre un panier
--- ----------------------------------------------------------------------------
-create function public.join_basket(p_basket_type_id uuid)
+drop function if exists public.fn_confirm_contribution(uuid, text);
+
+create or replace function public.join_basket(p_basket_type_id uuid)
 returns table (contribution_id uuid, amount numeric, basket_instance_id uuid, membership_id uuid)
 language plpgsql
 security definer
@@ -123,12 +120,7 @@ $$;
 revoke all on function public.join_basket from public, anon;
 grant execute on function public.join_basket to authenticated;
 
--- ----------------------------------------------------------------------------
--- Annule une adhésion dont le dépôt d'entrée a échoué ou expiré (occurrence
--- n°1 jamais payée). Ne touche jamais member_count : une réservation
--- impayée n'y était jamais comptée.
--- ----------------------------------------------------------------------------
-create function public.fn_cancel_failed_join(p_contribution_id uuid)
+create or replace function public.fn_cancel_failed_join(p_contribution_id uuid)
 returns void
 language plpgsql
 security definer
@@ -154,11 +146,7 @@ $$;
 revoke all on function public.fn_cancel_failed_join from public, anon, authenticated;
 grant execute on function public.fn_cancel_failed_join to service_role;
 
--- ----------------------------------------------------------------------------
--- Démarre (ou relance) le round d'un panier une fois la capacité atteinte.
--- Renvoie la liste des membres à notifier ("panier complet").
--- ----------------------------------------------------------------------------
-create function public.fn_start_round(p_instance_id uuid)
+create or replace function public.fn_start_round(p_instance_id uuid)
 returns table (user_id uuid, email citext, first_name text)
 language plpgsql
 security definer
@@ -232,14 +220,7 @@ $$;
 revoke all on function public.fn_start_round from public, anon, authenticated;
 grant execute on function public.fn_start_round to service_role;
 
--- ----------------------------------------------------------------------------
--- Confirme le paiement d'une cotisation (webhook GeniusPay). Si c'est le
--- dépôt d'entrée (occurrence n°1), c'est SEULEMENT ICI — jamais à la
--- réservation — que member_count est incrémenté : un membre ne compte pour
--- de vrai qu'une fois payé. Démarre le round si c'est la place qui vient de
--- compléter le panier.
--- ----------------------------------------------------------------------------
-create function public.fn_confirm_contribution(p_contribution_id uuid, p_provider_reference text, p_paid_amount numeric)
+create or replace function public.fn_confirm_contribution(p_contribution_id uuid, p_provider_reference text, p_paid_amount numeric)
 returns table (should_start_round boolean, basket_instance_id uuid)
 language plpgsql
 security definer
@@ -310,12 +291,7 @@ $$;
 revoke all on function public.fn_confirm_contribution from public, anon, authenticated;
 grant execute on function public.fn_confirm_contribution to service_role;
 
--- ----------------------------------------------------------------------------
--- Balayage quotidien : rappels du jour, expiration des dépôts d'entrée
--- jamais payés, retraits pour impayé de la veille, déclenchement des gains
--- du jour. Appelé une fois par jour par un cron.
--- ----------------------------------------------------------------------------
-create function public.fn_daily_tontine_sweep()
+create or replace function public.fn_daily_tontine_sweep()
 returns jsonb
 language plpgsql
 security definer

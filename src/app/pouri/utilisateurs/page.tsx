@@ -28,7 +28,12 @@ export default async function AdminUsersPage({
     .limit(50);
 
   if (q) {
-    query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`);
+    // Les caractères `,()` ont un sens syntaxique dans le filtre PostgREST
+    // `.or()` (séparateur / groupement) : on les retire pour qu'une valeur
+    // de recherche ne puisse jamais injecter une condition supplémentaire
+    // (ex : cibler un rôle) en dehors du champ de recherche prévu.
+    const safeQ = q.replace(/[,()]/g, "");
+    query = query.or(`first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`);
   }
 
   const { data: users } = await query;

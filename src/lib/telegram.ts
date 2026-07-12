@@ -3,6 +3,16 @@ import "server-only";
 import { formatFcfa } from "@/lib/format";
 
 /**
+ * Échappe les caractères spéciaux du sous-ensemble HTML de Telegram, pour
+ * qu'un prénom d'utilisateur (donnée saisie librement à l'inscription) ne
+ * puisse jamais injecter de faux lien ou de mise en forme trompeuse dans un
+ * message envoyé au groupe admin.
+ */
+function escapeTelegramHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
  * Notifications du groupe Telegram admin. Tolérant à l'absence de
  * configuration (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID pas encore définies) :
  * un envoi qui échoue ou n'est pas configuré ne doit jamais faire échouer
@@ -34,13 +44,13 @@ async function sendTelegramMessage(text: string): Promise<void> {
 
 export async function notifyBasketFull(params: { basketLabel: string; memberCount: number }) {
   await sendTelegramMessage(
-    `✅ <b>${params.basketLabel}</b> est complet (${params.memberCount} membres). Les cotisations démarrent demain.`
+    `✅ <b>${escapeTelegramHtml(params.basketLabel)}</b> est complet (${params.memberCount} membres). Les cotisations démarrent demain.`
   );
 }
 
 export async function notifyMemberRemoved(params: { basketLabel: string; firstName: string; joinUrl: string }) {
   await sendTelegramMessage(
-    `⚠️ Un membre (${params.firstName}) a été retiré du <b>${params.basketLabel}</b> pour non-paiement.\nUne place est libre : ${params.joinUrl}`
+    `⚠️ Un membre (${escapeTelegramHtml(params.firstName)}) a été retiré du <b>${escapeTelegramHtml(params.basketLabel)}</b> pour non-paiement.\nUne place est libre : ${params.joinUrl}`
   );
 }
 
@@ -51,12 +61,12 @@ export async function notifyPayoutConfirmed(params: {
   joinUrl: string;
 }) {
   await sendTelegramMessage(
-    `💰 ${params.firstName} a été payé(e) : ${formatFcfa(params.amount)} sur le <b>${params.basketLabel}</b>.\nUne place vient de se libérer : ${params.joinUrl}`
+    `💰 ${escapeTelegramHtml(params.firstName)} a été payé(e) : ${formatFcfa(params.amount)} sur le <b>${escapeTelegramHtml(params.basketLabel)}</b>.\nUne place vient de se libérer : ${params.joinUrl}`
   );
 }
 
 export async function notifyPayoutReady(params: { basketLabel: string; firstName: string; amount: number }) {
   await sendTelegramMessage(
-    `🎉 ${params.firstName} remporte le <b>${params.basketLabel}</b> : ${formatFcfa(params.amount)} à verser.`
+    `🎉 ${escapeTelegramHtml(params.firstName)} remporte le <b>${escapeTelegramHtml(params.basketLabel)}</b> : ${formatFcfa(params.amount)} à verser.`
   );
 }

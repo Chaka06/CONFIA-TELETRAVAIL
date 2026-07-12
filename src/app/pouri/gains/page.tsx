@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ const METHOD_LABEL: Record<string, string> = {
 };
 
 export default async function AdminGainsPage() {
+  await requireAdmin();
   const admin = createAdminClient();
 
   const { data: payouts } = await admin

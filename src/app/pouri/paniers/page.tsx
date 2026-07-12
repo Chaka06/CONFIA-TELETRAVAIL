@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ const STATUS_LABEL: Record<string, { label: string; className: string }> = {
 };
 
 export default async function AdminPaniersPage() {
+  await requireAdmin();
   const admin = createAdminClient();
 
   const { data: instances } = await admin

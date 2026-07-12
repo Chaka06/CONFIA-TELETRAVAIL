@@ -606,7 +606,11 @@ export type Database = {
         Returns: undefined
       }
       fn_confirm_contribution: {
-        Args: { p_contribution_id: string; p_provider_reference: string }
+        Args: {
+          p_contribution_id: string
+          p_paid_amount: number
+          p_provider_reference: string
+        }
         Returns: {
           basket_instance_id: string
           should_start_round: boolean

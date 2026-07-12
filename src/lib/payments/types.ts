@@ -33,7 +33,7 @@ export type PaymentSession = {
 };
 
 export type PaymentWebhookEvent =
-  | { type: "contribution.confirmed"; contributionId: string; providerReference: string; providerEventId: string }
+  | { type: "contribution.confirmed"; contributionId: string; providerReference: string; amount: number; providerEventId: string }
   | { type: "contribution.failed"; contributionId: string; providerReference: string; reason: string; providerEventId: string }
   /** Événement reçu mais sans action métier à ce stade (ex: payment.initiated, payment.refunded). */
   | { type: "ignored"; rawEvent: string; providerEventId: string };

@@ -102,6 +102,7 @@ describe("geniusPayProvider.parseWebhookEvent", () => {
       type: "contribution.confirmed",
       contributionId: "contribution-uuid",
       providerReference: "MTX-A1B2C3D4E5",
+      amount: 1000,
       providerEventId: "evt_1",
     });
   });

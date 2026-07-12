@@ -22,9 +22,17 @@ type SweepResult = {
  */
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get("authorization");
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Échec fermé : si le secret n'est pas configuré, on refuse tout appel
+  // plutôt que d'autoriser silencieusement un déclenchement public non
+  // authentifié d'une route qui retire des membres et déclenche des gains.
+  if (!cronSecret) {
+    console.error("tontine_sweep_cron_secret_not_configured");
+    return NextResponse.json({ error: "not_configured" }, { status: 500 });
+  }
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
