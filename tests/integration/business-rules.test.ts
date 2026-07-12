@@ -187,6 +187,15 @@ describe("Moteur financier — parcours complet des 4 paliers", () => {
   let refereeClient: SupabaseClient;
 
   beforeAll(async () => {
+    // Les retraits par droit de cycle sont désactivés par défaut en
+    // production (GeniusPay n'a pas encore d'API de payout) : on les
+    // réactive ici pour continuer à tester ce mécanisme, restitué en fin de
+    // suite.
+    await admin
+      .from("platform_settings")
+      .update({ value: false })
+      .eq("key", "withdrawals_require_unrestricted_threshold");
+
     referrer = await createConfirmedUser(admin, "referrer", {
       first_name: "Awa",
       last_name: "Diallo",
@@ -219,6 +228,10 @@ describe("Moteur financier — parcours complet des 4 paliers", () => {
       await admin.from("email_logs").delete().eq("user_id", user.id);
       await admin.auth.admin.deleteUser(user.id);
     }
+    await admin
+      .from("platform_settings")
+      .update({ value: true })
+      .eq("key", "withdrawals_require_unrestricted_threshold");
   });
 
   it("associe automatiquement le filleul au parrain via le code promo", async () => {
@@ -399,6 +412,11 @@ describe("Retraits — cycle d'état pending → processing → completed/reject
   let userClient: SupabaseClient;
 
   beforeAll(async () => {
+    await admin
+      .from("platform_settings")
+      .update({ value: false })
+      .eq("key", "withdrawals_require_unrestricted_threshold");
+
     user = await createConfirmedUser(admin, "withdrawer", {
       first_name: "Fatou",
       last_name: "Sow",
@@ -434,6 +452,10 @@ describe("Retraits — cycle d'état pending → processing → completed/reject
     await admin.from("audit_logs").delete().eq("actor_id", user.id);
     await admin.from("email_logs").delete().eq("user_id", user.id);
     await admin.auth.admin.deleteUser(user.id);
+    await admin
+      .from("platform_settings")
+      .update({ value: true })
+      .eq("key", "withdrawals_require_unrestricted_threshold");
   });
 
   it("un retrait approuvé passe par 'processing' avant 'completed' — jamais directement", async () => {
@@ -518,5 +540,67 @@ describe("Retraits — cycle d'état pending → processing → completed/reject
 
     const { data: rightAfter } = await admin.from("withdrawal_rights").select("status").eq("id", right!.id).single();
     expect(rightAfter?.status).toBe("available");
+  });
+});
+
+describe("Retraits — bloqués sous le seuil illimité par défaut (GeniusPay sans API de payout)", () => {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  let user: { id: string; email: string };
+  let userClient: SupabaseClient;
+
+  beforeAll(async () => {
+    user = await createConfirmedUser(admin, "blocked-withdrawer", {
+      first_name: "Ibrahim",
+      last_name: "Traore",
+      date_of_birth: "1996-01-01",
+      city: "Abidjan",
+      phone_number: "+2250700000401",
+    });
+    userClient = await signIn(user.email);
+
+    await admin.rpc("fn_apply_wallet_delta", {
+      p_user_id: user.id,
+      p_delta: 5000,
+      p_type: "adjustment",
+      p_reference_table: "test",
+      p_reference_id: user.id,
+      p_description: "Crédit de test",
+    });
+    const { data: cycle } = await admin
+      .from("mission_cycles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+    await admin.from("withdrawal_rights").insert({
+      user_id: user.id,
+      source_cycle_id: cycle!.id,
+      cap_amount: 5000,
+    });
+  }, 30000);
+
+  afterAll(async () => {
+    await admin.from("audit_logs").delete().eq("actor_id", user.id);
+    await admin.from("email_logs").delete().eq("user_id", user.id);
+    await admin.auth.admin.deleteUser(user.id);
+  });
+
+  it("refuse un retrait par droit de cycle malgré un droit disponible, tant que l'actif n'atteint pas le seuil illimité (comportement par défaut)", async () => {
+    const { data: setting } = await admin
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "withdrawals_require_unrestricted_threshold")
+      .single();
+    expect(setting?.value).toBe(true);
+
+    const { data: withdrawal, error } = await userClient.rpc("request_withdrawal", {
+      p_amount: 5000,
+      p_destination_details: { phone_number: "+2250700000401", full_name: "Ibrahim Traore" },
+    });
+
+    expect(withdrawal).toBeNull();
+    expect(error?.message).toContain("withdrawals_disabled_below_threshold");
   });
 });

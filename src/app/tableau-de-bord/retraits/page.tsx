@@ -32,10 +32,15 @@ export default async function RetraitsPage() {
 
   if (!user) return null;
 
-  const [{ data: wallet }, { data: threshold }, { data: availableRight }, { data: withdrawals }] =
+  const [{ data: wallet }, { data: threshold }, { data: thresholdOnly }, { data: availableRight }, { data: withdrawals }] =
     await Promise.all([
       supabase.from("wallets").select("balance").eq("user_id", user.id).single(),
       supabase.from("platform_settings").select("value").eq("key", "unrestricted_withdrawal_threshold").single(),
+      supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "withdrawals_require_unrestricted_threshold")
+        .maybeSingle(),
       supabase
         .from("withdrawal_rights")
         .select("cap_amount")
@@ -55,8 +60,13 @@ export default async function RetraitsPage() {
   const unrestrictedThreshold = Number(threshold?.value ?? 200000);
   const isUnrestricted = balance >= unrestrictedThreshold;
   const progressPct = Math.min(100, Math.round((balance / unrestrictedThreshold) * 100));
+  const requiresThresholdOnly = thresholdOnly?.value === true;
 
-  const maxAmount = isUnrestricted ? balance : (availableRight?.cap_amount ?? 0);
+  const maxAmount = isUnrestricted
+    ? balance
+    : requiresThresholdOnly
+      ? 0
+      : (availableRight?.cap_amount ?? 0);
   const canWithdraw = maxAmount > 0;
 
   return (
@@ -64,8 +74,9 @@ export default async function RetraitsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Retraits</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Chaque mission complète (4 paliers) débloque un droit de retrait unique de 5 000 FCFA.
-          À partir de 200 000 FCFA d&apos;actif, cette limite est levée.
+          {requiresThresholdOnly
+            ? `Les retraits sont disponibles à partir de ${formatFcfa(unrestrictedThreshold)} d'actif.`
+            : "Chaque mission complète (4 paliers) débloque un droit de retrait unique de 5 000 FCFA. À partir de 200 000 FCFA d'actif, cette limite est levée."}
         </p>
       </div>
 
@@ -93,12 +104,22 @@ export default async function RetraitsPage() {
             <CardDescription>
               {canWithdraw
                 ? `Montant maximum disponible : ${formatFcfa(maxAmount)}`
-                : "Aucun droit de retrait disponible pour le moment."}
+                : requiresThresholdOnly
+                  ? "Retraits indisponibles pour le moment."
+                  : "Aucun droit de retrait disponible pour le moment."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {canWithdraw ? (
               <WithdrawalForm maxAmount={maxAmount} />
+            ) : requiresThresholdOnly ? (
+              <Alert>
+                <AlertCircle className="size-4" />
+                <AlertTitle>Retraits temporairement limités</AlertTitle>
+                <AlertDescription>
+                  Les retraits sont réservés aux comptes ayant atteint {formatFcfa(unrestrictedThreshold)} d&apos;actif. Continuez à progresser dans vos paliers pour l&apos;atteindre.
+                </AlertDescription>
+              </Alert>
             ) : (
               <Alert>
                 <AlertCircle className="size-4" />

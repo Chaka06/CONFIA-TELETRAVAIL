@@ -32,6 +32,10 @@ export const SETTINGS_DISPLAY: Record<string, { label: string; type: SettingDisp
     label: "Plafond d'un retrait unique débloqué",
     type: "amount",
   },
+  withdrawals_require_unrestricted_threshold: {
+    label: "Retraits limités au seuil illimité (droits de cycle désactivés — en attendant l'API de payout GeniusPay)",
+    type: "boolean",
+  },
 };
 
 export function getSettingDisplay(key: string) {

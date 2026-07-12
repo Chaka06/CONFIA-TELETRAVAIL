@@ -35,6 +35,9 @@ export async function requestWithdrawal(
 }
 
 function mapWithdrawalError(message: string): string {
+  if (message.includes("withdrawals_disabled_below_threshold")) {
+    return "Les retraits sont réservés aux comptes ayant atteint le seuil d'actif illimité pour le moment.";
+  }
   if (message.includes("no_withdrawal_right_available")) {
     return "Aucun droit de retrait disponible. Terminez une mission complète (4 paliers) pour en débloquer un nouveau.";
   }
