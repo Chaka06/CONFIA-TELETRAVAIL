@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — jamais de vraies valeurs versionnées, mais le template
+# (noms de variables uniquement, aucun secret) reste utile pour la
+# configuration Vercel et sert de checklist de production.
 .env*
+!.env.local.example
 
 # vercel
 .vercel
