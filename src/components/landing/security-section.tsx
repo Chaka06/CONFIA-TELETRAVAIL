@@ -32,7 +32,7 @@ export function SecuritySection() {
             Une plateforme pensée pour la confiance
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Confia applique les standards de sécurité attendus d&apos;une plateforme financière moderne.
+            Confssa applique les standards de sécurité attendus d&apos;une plateforme financière moderne.
           </p>
         </div>
 

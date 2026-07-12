@@ -229,7 +229,7 @@ export function InscriptionForm() {
       <CardHeader>
         <CardTitle className="text-xl">Créer votre compte</CardTitle>
         <CardDescription>
-          Renseignez vos informations pour rejoindre Confia. Toutes les données sont utilisées uniquement dans le cadre du fonctionnement de la plateforme.
+          Renseignez vos informations pour rejoindre Confssa. Toutes les données sont utilisées uniquement dans le cadre du fonctionnement de la plateforme.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -390,7 +390,7 @@ export function InscriptionForm() {
                       <Link href="/politique-de-confidentialite" target="_blank" className="text-primary hover:underline">
                         politique de confidentialité
                       </Link>{" "}
-                      de Confia.
+                      de Confssa.
                     </FormLabel>
                     <FormMessage />
                   </div>

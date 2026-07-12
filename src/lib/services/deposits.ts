@@ -49,7 +49,7 @@ export async function initiateTierDeposit(
       depositId: deposit.id,
       amount: deposit.amount,
       currency: "XOF",
-      description: `Dépôt Confia — ${formatFcfa(deposit.amount)}`,
+      description: `Dépôt Confssa — ${formatFcfa(deposit.amount)}`,
       customer: {
         fullName: `${profile.first_name} ${profile.last_name}`,
         email: profile.email,

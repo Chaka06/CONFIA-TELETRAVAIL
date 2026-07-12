@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { signUpSchema } from "@/lib/validation/auth";
 import { requestSignupOtp, SignupOtpError } from "@/lib/auth/signup-otp";
 
+// Marge au-delà du timeout SMTP (cf. transporter.ts) pour laisser à la
+// fonction le temps de répondre proprement même en cas de serveur SMTP lent.
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   const json = await request.json().catch(() => null);
   const parsed = signUpSchema.safeParse(json);

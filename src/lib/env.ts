@@ -40,7 +40,7 @@ const serverEnvSchema = z.object({
   SMTP_IGNORE_TLS: booleanEnvVar(false),
   SMTP_USER: z.string().min(1).default("changeme"),
   SMTP_PASSWORD: z.string().min(1).default("changeme"),
-  SMTP_FROM_NAME: z.string().min(1).default("Confia"),
+  SMTP_FROM_NAME: z.string().min(1).default("Confssa"),
   SMTP_FROM_EMAIL: z.string().email().default("no-reply@example.com"),
 
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),

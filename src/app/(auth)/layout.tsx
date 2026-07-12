@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="w-full max-w-md">{children}</div>
       </main>
       <footer className="border-t border-border bg-background px-4 py-4 text-center text-xs text-muted-foreground sm:px-6">
-        © {new Date().getFullYear()} Confia. Plateforme professionnelle de télétravail rémunéré.
+        © {new Date().getFullYear()} Confssa. Plateforme professionnelle de télétravail rémunéré.
       </footer>
     </div>
   );

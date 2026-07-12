@@ -63,7 +63,7 @@ export default function ReinitialiserMotDePassePage() {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Nouveau mot de passe</CardTitle>
-        <CardDescription>Choisissez un nouveau mot de passe pour votre compte Confia.</CardDescription>
+        <CardDescription>Choisissez un nouveau mot de passe pour votre compte Confssa.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

@@ -78,7 +78,7 @@ export function renderEmailLayout(params: {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color:#ffffff; border: 1px solid ${BORDER};">
             <tr>
               <td style="background-color:${BRAND_NAVY}; padding: 24px 28px;">
-                <span style="color:#ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Confia</span>
+                <span style="color:#ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Confssa</span>
               </td>
             </tr>
             <tr>
@@ -92,7 +92,7 @@ export function renderEmailLayout(params: {
             </tr>
             <tr>
               <td style="padding: 18px 28px; background-color:#f7f8fa; border-top: 1px solid ${BORDER};">
-                <p style="margin:0 0 4px; font-size: 12px; color:${TEXT_MUTED};">Confia — plateforme professionnelle de télétravail rémunéré.</p>
+                <p style="margin:0 0 4px; font-size: 12px; color:${TEXT_MUTED};">Confssa — plateforme professionnelle de télétravail rémunéré.</p>
                 <p style="margin:0; font-size: 12px; color:${TEXT_MUTED};">Une question, une réclamation ? Écrivez-nous : <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND_NAVY};">${CONTACT_EMAIL}</a></p>
               </td>
             </tr>

@@ -32,7 +32,7 @@ export function SiteFooter() {
               </ul>
             </div>
             <div>
-              <p className="mb-3 font-medium text-foreground">Confiance</p>
+              <p className="mb-3 font-medium text-foreground">Confssance</p>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#securite" className="hover:text-foreground">Sécurité</a></li>
                 <li>
@@ -46,7 +46,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Confia. Tous droits réservés.</span>
+          <span>© {new Date().getFullYear()} Confssa. Tous droits réservés.</span>
           <div className="flex gap-4">
             <Link href="/conditions-utilisation" className="hover:text-foreground">
               Conditions d&apos;utilisation

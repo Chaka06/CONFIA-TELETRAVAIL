@@ -12,7 +12,7 @@ export default function BienvenuePage() {
           <CheckCircle2 className="mb-2 size-10 text-success" aria-hidden />
           <CardTitle>Adresse e-mail confirmée</CardTitle>
           <CardDescription>
-            Votre compte Confia est actif. Vous pouvez dès maintenant effectuer le dépôt de démarrage du palier 1 (2 000 FCFA) pour débloquer vos premières missions rémunérées.
+            Votre compte Confssa est actif. Vous pouvez dès maintenant effectuer le dépôt de démarrage du palier 1 (2 000 FCFA) pour débloquer vos premières missions rémunérées.
           </CardDescription>
         </CardHeader>
         <CardContent>

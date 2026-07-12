@@ -16,24 +16,31 @@ const geistMono = Geist_Mono({
 });
 
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
-const TITLE = "Confia — Plateforme de télétravail rémunéré";
+const TITLE = "Confssa — Plateforme de télétravail rémunéré";
 const DESCRIPTION =
-  "Confia est une plateforme professionnelle de télétravail rémunéré : missions vérifiées, progression par paliers transparente, retraits sécurisés et parrainage traçable.";
+  "Confssa est une plateforme professionnelle de télétravail rémunéré : missions vérifiées, progression par paliers transparente, retraits sécurisés et parrainage traçable.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_BASE_URL),
   title: {
     default: TITLE,
-    template: "%s | Confia",
+    template: "%s | Confssa",
   },
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
     url: APP_BASE_URL,
-    siteName: "Confia",
+    siteName: "Confssa",
     locale: "fr_FR",
     type: "website",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 800, alt: TITLE }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og-image.jpg"],
   },
 };
 

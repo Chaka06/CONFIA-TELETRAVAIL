@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { resendSignupOtp, SignupOtpError } from "@/lib/auth/signup-otp";
 
+export const maxDuration = 30;
+
 const bodySchema = z.object({
   email: z.string().trim().email(),
 });

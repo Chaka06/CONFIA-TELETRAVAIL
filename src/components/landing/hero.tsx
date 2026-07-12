@@ -20,7 +20,7 @@ export function Hero() {
             </h1>
 
             <p className="mt-5 text-balance text-lg leading-relaxed text-muted-foreground">
-              Confia structure le télétravail rémunéré autour de missions courtes et vérifiées,
+              Confssa structure le télétravail rémunéré autour de missions courtes et vérifiées,
               d&apos;une progression par paliers expliquée à l&apos;avance et de règles financières
               identiques pour tous — sans zone d&apos;ombre.
             </p>

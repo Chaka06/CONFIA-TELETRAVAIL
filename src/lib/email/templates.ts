@@ -4,15 +4,15 @@ export type EmailTemplate = { subject: string; html: string };
 
 export function signupOtpEmail(params: { code: string }): EmailTemplate {
   return {
-    subject: "Votre code de confirmation — Confia",
+    subject: "Votre code de confirmation — Confssa",
     html: renderEmailLayout({
       title: "Confirmez votre adresse e-mail",
       paragraphs: [
-        "Merci de votre inscription sur Confia. Pour activer votre compte, saisissez le code suivant dans la fenêtre de confirmation :",
+        "Merci de votre inscription sur Confssa. Pour activer votre compte, saisissez le code suivant dans la fenêtre de confirmation :",
       ],
       code: params.code,
       footnote:
-        "Ce code expire dans 15 minutes et ne peut être utilisé qu'une seule fois. Ne le communiquez jamais, même à quelqu'un se présentant comme membre de l'équipe Confia. Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail : aucun compte ne sera créé sans confirmation de ce code.",
+        "Ce code expire dans 15 minutes et ne peut être utilisé qu'une seule fois. Ne le communiquez jamais, même à quelqu'un se présentant comme membre de l'équipe Confssa. Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail : aucun compte ne sera créé sans confirmation de ce code.",
     }),
   };
 }

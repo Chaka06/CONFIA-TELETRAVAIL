@@ -22,6 +22,13 @@ export function getMailTransporter() {
     secure: env.SMTP_SECURE,
     ignoreTLS: env.SMTP_IGNORE_TLS,
     auth: env.SMTP_USER === "changeme" ? undefined : { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
+    // Un serveur SMTP mal configuré (mauvais identifiants, port bloqué) ne
+    // doit jamais faire attendre indéfiniment une requête utilisateur (ex :
+    // inscription) — mieux vaut échouer vite que dépasser le timeout de la
+    // fonction serverless sans réponse du tout.
+    connectionTimeout: 8000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
   });
 
   return cachedTransporter;

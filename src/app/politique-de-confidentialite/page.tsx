@@ -40,7 +40,7 @@ export default function PolitiqueConfidentialitePage() {
           <div className="mt-8 space-y-8">
             <Section title="1. Qui sommes-nous ?">
               <p>
-                Confia est une plateforme professionnelle de télétravail rémunéré. La présente
+                Confssa est une plateforme professionnelle de télétravail rémunéré. La présente
                 politique décrit comment nous collectons, utilisons et protégeons les données
                 personnelles des utilisateurs de la plateforme (les « Utilisateurs »).
               </p>

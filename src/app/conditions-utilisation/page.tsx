@@ -41,7 +41,7 @@ export default function ConditionsUtilisationPage() {
             <Section title="1. Objet">
               <p>
                 Les présentes conditions générales d&apos;utilisation (« CGU ») régissent l&apos;accès et
-                l&apos;utilisation de la plateforme Confia (le « Service »), qui propose à ses
+                l&apos;utilisation de la plateforme Confssa (le « Service »), qui propose à ses
                 utilisateurs (les « Utilisateurs ») d&apos;accomplir des micro-missions rémunérées en
                 télétravail, organisées selon un système de progression par paliers.
               </p>
@@ -89,7 +89,7 @@ export default function ConditionsUtilisationPage() {
                 sur le solde de l&apos;Utilisateur.
               </p>
               <p>
-                Confia se réserve le droit de faire évoluer à tout moment le contenu, le nombre, la
+                Confssa se réserve le droit de faire évoluer à tout moment le contenu, le nombre, la
                 rémunération ou la nature des missions, ainsi que les montants et conditions des
                 paliers, sous réserve d&apos;en informer les Utilisateurs.
               </p>
@@ -113,7 +113,7 @@ export default function ConditionsUtilisationPage() {
             <Section title="5. Paiements, dépôts et retraits">
               <p>
                 Les dépôts et retraits sont traités par l&apos;intermédiaire d&apos;un prestataire de
-                paiement tiers agréé. Confia ne collecte ni ne conserve aucune donnée de carte
+                paiement tiers agréé. Confssa ne collecte ni ne conserve aucune donnée de carte
                 bancaire ou de compte de paiement : ces informations transitent exclusivement par
                 l&apos;infrastructure sécurisée du prestataire de paiement.
               </p>
@@ -121,7 +121,7 @@ export default function ConditionsUtilisationPage() {
                 Les retraits sont soumis aux règles de déblocage en vigueur sur la plateforme
                 (droits de retrait associés à la progression, et/ou seuils d&apos;actif minimum), ainsi
                 qu&apos;à une validation manuelle par l&apos;équipe d&apos;administration avant tout envoi
-                effectif des fonds. Confia se réserve le droit de suspendre temporairement les
+                effectif des fonds. Confssa se réserve le droit de suspendre temporairement les
                 retraits, en tout ou partie, notamment en cas d&apos;indisponibilité du prestataire de
                 paiement pour les opérations sortantes, sans que cela ne remette en cause les
                 sommes dues, qui restent acquises à l&apos;Utilisateur et exigibles dès le retour à la
@@ -147,7 +147,7 @@ export default function ConditionsUtilisationPage() {
 
             <Section title="7. Suspension et résiliation">
               <p>
-                Confia se réserve le droit de suspendre ou de résilier, à tout moment et sans
+                Confssa se réserve le droit de suspendre ou de résilier, à tout moment et sans
                 préavis, le compte d&apos;un Utilisateur en cas de violation des présentes CGU, de
                 fraude avérée ou suspectée, ou de toute utilisation abusive du Service. L&apos;Utilisateur
                 peut à tout moment demander la clôture de son compte en contactant le support.
@@ -156,9 +156,9 @@ export default function ConditionsUtilisationPage() {
 
             <Section title="8. Responsabilité">
               <p>
-                Le Service est fourni « en l&apos;état ». Confia met en œuvre des moyens raisonnables
+                Le Service est fourni « en l&apos;état ». Confssa met en œuvre des moyens raisonnables
                 pour assurer la disponibilité et la sécurité de la plateforme, sans garantir
-                l&apos;absence totale d&apos;interruption ou d&apos;erreur. Confia ne saurait être tenue
+                l&apos;absence totale d&apos;interruption ou d&apos;erreur. Confssa ne saurait être tenue
                 responsable des dommages indirects résultant de l&apos;utilisation ou de
                 l&apos;impossibilité d&apos;utiliser le Service, ni des délais de traitement imputables à
                 un prestataire de paiement tiers ou à un opérateur de mobile money.
@@ -168,7 +168,7 @@ export default function ConditionsUtilisationPage() {
             <Section title="9. Propriété intellectuelle">
               <p>
                 L&apos;ensemble des éléments composant le Service (marque, logo, contenus, interface,
-                code source) est la propriété exclusive de Confia ou de ses concédants et est
+                code source) est la propriété exclusive de Confssa ou de ses concédants et est
                 protégé par les législations applicables en matière de propriété intellectuelle.
                 Toute reproduction ou exploitation non autorisée est interdite.
               </p>
@@ -176,7 +176,7 @@ export default function ConditionsUtilisationPage() {
 
             <Section title="10. Modification des CGU">
               <p>
-                Confia peut modifier les présentes CGU à tout moment. Les Utilisateurs seront
+                Confssa peut modifier les présentes CGU à tout moment. Les Utilisateurs seront
                 informés de toute modification substantielle. La poursuite de l&apos;utilisation du
                 Service après modification vaut acceptation des nouvelles CGU.
               </p>

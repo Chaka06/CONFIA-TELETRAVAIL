@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Logo de marque. "icon" = blason seul (favoris, espaces compacts),
- * "full" = blason + mot-symbole "Confia" (en-têtes, pages d'authentification).
+ * "full" = blason + mot-symbole "Confssa" (en-têtes, pages d'authentification).
  */
 export function Logo({
   variant = "full",
@@ -19,7 +19,7 @@ export function Logo({
     return (
       <Image
         src="/logo-icon.png"
-        alt="Confia"
+        alt="Confssa"
         width={256}
         height={250}
         priority={priority}
@@ -31,7 +31,7 @@ export function Logo({
   return (
     <Image
       src="/logo.png"
-      alt="Confia"
+      alt="Confssa"
       width={640}
       height={212}
       priority={priority}

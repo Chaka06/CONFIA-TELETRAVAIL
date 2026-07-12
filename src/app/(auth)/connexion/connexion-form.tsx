@@ -60,7 +60,7 @@ export function ConnexionForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Connexion</CardTitle>
-        <CardDescription>Accédez à votre tableau de bord Confia.</CardDescription>
+        <CardDescription>Accédez à votre tableau de bord Confssa.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
