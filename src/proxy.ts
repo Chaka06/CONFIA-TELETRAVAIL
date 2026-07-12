@@ -35,6 +35,21 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // `getUser()` peut avoir rafraîchi la session expirée et préparé de
+  // nouveaux cookies (rotation du refresh token) via `setAll` ci-dessus,
+  // qui n'atterrissent que sur `response`. Toute redirection ci-dessous doit
+  // impérativement les reporter sur sa propre réponse — sinon le navigateur
+  // ne reçoit jamais le nouveau refresh token, renvoie l'ancien (déjà
+  // invalidé côté serveur) à la requête suivante, et boucle indéfiniment
+  // entre /connexion et la page protégée.
+  const redirect = (url: URL) => {
+    const redirectResponse = NextResponse.redirect(url);
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie);
+    }
+    return redirectResponse;
+  };
+
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -43,11 +58,11 @@ export async function proxy(request: NextRequest) {
   if (isProtected && !user) {
     const redirectUrl = new URL("/connexion", request.url);
     redirectUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(redirectUrl);
+    return redirect(redirectUrl);
   }
 
   if (isAuthPage && user) {
-    return NextResponse.redirect(new URL("/tableau-de-bord", request.url));
+    return redirect(new URL("/tableau-de-bord", request.url));
   }
 
   if (pathname.startsWith("/pouri") && user) {
@@ -58,7 +73,7 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
-      return NextResponse.redirect(new URL("/tableau-de-bord", request.url));
+      return redirect(new URL("/tableau-de-bord", request.url));
     }
   }
 
