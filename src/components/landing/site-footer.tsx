@@ -45,8 +45,16 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Confia. Tous droits réservés.
+        <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Confia. Tous droits réservés.</span>
+          <div className="flex gap-4">
+            <Link href="/conditions-utilisation" className="hover:text-foreground">
+              Conditions d&apos;utilisation
+            </Link>
+            <Link href="/politique-de-confidentialite" className="hover:text-foreground">
+              Politique de confidentialité
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -382,7 +382,15 @@ export function InscriptionForm() {
                   </FormControl>
                   <div className="space-y-0.5 leading-none">
                     <FormLabel className="font-normal">
-                      J&apos;accepte les conditions d&apos;utilisation et la politique de confidentialité de Confia.
+                      J&apos;accepte les{" "}
+                      <Link href="/conditions-utilisation" target="_blank" className="text-primary hover:underline">
+                        conditions d&apos;utilisation
+                      </Link>{" "}
+                      et la{" "}
+                      <Link href="/politique-de-confidentialite" target="_blank" className="text-primary hover:underline">
+                        politique de confidentialité
+                      </Link>{" "}
+                      de Confia.
                     </FormLabel>
                     <FormMessage />
                   </div>
