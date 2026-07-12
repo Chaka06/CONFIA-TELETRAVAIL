@@ -1,14 +1,16 @@
 /**
- * Abstraction du fournisseur de paiement. Le reste de l'application (routes
- * API de dépôt/retrait) ne dépend jamais directement de Genius Pay : elle
- * dépend de cette interface. Changer d'agrégateur ne nécessite donc qu'une
- * nouvelle implémentation de `PaymentProvider`, sans toucher au moteur des
- * paliers ni à la logique métier.
+ * Abstraction du fournisseur de paiement. Le reste de l'application ne
+ * dépend jamais directement de Genius Pay : elle dépend de cette interface.
+ *
+ * Modèle tontine : seules les cotisations (entrantes) passent par
+ * l'agrégateur. Les gains (sortants) sont versés manuellement par
+ * l'administrateur — GeniusPay n'expose pas encore d'API de payout — donc
+ * aucune abstraction de paiement sortant n'est nécessaire ici.
  */
 
 export type PaymentSessionParams = {
-  /** Identifiant du dépôt (public.deposits.id) — transmis en metadata, jamais comme référence. */
-  depositId: string;
+  /** Identifiant de la cotisation (public.tontine_contributions.id) — transmis en metadata. */
+  contributionId: string;
   amount: number;
   currency: "XOF";
   customer: {
@@ -30,36 +32,15 @@ export type PaymentSession = {
   providerReference: string;
 };
 
-export type PayoutParams = {
-  /** Identifiant du retrait (public.withdrawals.id) — transmis en metadata. */
-  withdrawalId: string;
-  amount: number;
-  currency: "XOF";
-  destination: {
-    phoneNumber: string;
-    fullName: string;
-  };
-};
-
-export type PayoutResult = {
-  providerReference: string;
-  status: "pending" | "processing" | "completed" | "failed";
-};
-
 export type PaymentWebhookEvent =
-  | { type: "deposit.confirmed"; depositId: string; providerReference: string; providerEventId: string }
-  | { type: "deposit.failed"; depositId: string; providerReference: string; reason: string; providerEventId: string }
-  | { type: "payout.completed"; withdrawalId: string; providerReference: string; providerEventId: string }
-  | { type: "payout.failed"; withdrawalId: string; providerReference: string; reason: string; providerEventId: string }
-  /** Événement reçu mais sans action métier à ce stade (ex: payment.initiated, cashout.requested). */
+  | { type: "contribution.confirmed"; contributionId: string; providerReference: string; providerEventId: string }
+  | { type: "contribution.failed"; contributionId: string; providerReference: string; reason: string; providerEventId: string }
+  /** Événement reçu mais sans action métier à ce stade (ex: payment.initiated, payment.refunded). */
   | { type: "ignored"; rawEvent: string; providerEventId: string };
 
 export interface PaymentProvider {
-  /** Crée une session de paiement pour financer un dépôt de palier (page de checkout hébergée). */
-  createDepositSession(params: PaymentSessionParams): Promise<PaymentSession>;
-
-  /** Déclenche un virement/paiement mobile money vers l'utilisateur (retrait). */
-  createPayout(params: PayoutParams): Promise<PayoutResult>;
+  /** Crée une session de paiement pour financer une cotisation (page de checkout hébergée). */
+  createContributionSession(params: PaymentSessionParams): Promise<PaymentSession>;
 
   /**
    * Vérifie l'authenticité et la fraîcheur d'un webhook entrant (signature

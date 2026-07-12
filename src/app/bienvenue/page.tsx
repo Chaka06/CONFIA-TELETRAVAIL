@@ -12,12 +12,12 @@ export default function BienvenuePage() {
           <CheckCircle2 className="mb-2 size-10 text-success" aria-hidden />
           <CardTitle>Adresse e-mail confirmée</CardTitle>
           <CardDescription>
-            Votre compte Confssa est actif. Vous pouvez dès maintenant effectuer le dépôt de démarrage du palier 1 (2 000 FCFA) pour débloquer vos premières missions rémunérées.
+            Votre compte Confssa est actif. Vous pouvez dès maintenant rejoindre le panier de votre choix.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button render={<Link href="/tableau-de-bord" />} nativeButton={false} className="w-full">
-            Accéder à mon tableau de bord
+          <Button render={<Link href="/paniers" />} nativeButton={false} className="w-full">
+            Voir les paniers
           </Button>
         </CardContent>
       </Card>

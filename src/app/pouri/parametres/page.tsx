@@ -8,9 +8,9 @@ export default async function AdminSettingsPage() {
   const { profile } = await requireAdmin();
   const admin = createAdminClient();
 
-  const [{ data: settings }, { data: tiers }] = await Promise.all([
+  const [{ data: settings }, { data: basketTypes }] = await Promise.all([
     admin.from("platform_settings").select("key, value, description").order("key"),
-    admin.from("tier_definitions").select("*").order("tier_number"),
+    admin.from("tontine_basket_types").select("*").order("contribution_amount"),
   ]);
 
   const isSuperAdmin = profile.role === "super_admin";
@@ -26,39 +26,40 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Paramètres généraux</CardTitle>
-          <CardDescription>Plafonds, seuils et montants de commission.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {(settings ?? []).map((s) => (
-            <SettingRow
-              key={s.key}
-              settingKey={s.key}
-              initialValue={typeof s.value === "string" ? s.value : JSON.stringify(s.value)}
-              description={s.description}
-              readOnly={!isSuperAdmin}
-            />
-          ))}
-        </CardContent>
-      </Card>
+      {settings && settings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Paramètres généraux</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {settings.map((s) => (
+              <SettingRow
+                key={s.key}
+                settingKey={s.key}
+                initialValue={typeof s.value === "string" ? s.value : JSON.stringify(s.value)}
+                description={s.description}
+                readOnly={!isSuperAdmin}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Paliers</CardTitle>
+          <CardTitle>Formules de portefeuille</CardTitle>
           <CardDescription>
-            Montants des 4 paliers obligatoires (lecture seule ici — modification via la base de
-            données par un super administrateur, opération sensible).
+            Les 4 paniers proposés (lecture seule ici — modification via la base de données par un
+            super administrateur, opération sensible).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {(tiers ?? []).map((t) => (
-            <div key={t.tier_number} className="flex justify-between border-b border-border py-2 text-sm last:border-0">
-              <span className="font-medium">Palier {t.tier_number}</span>
+          {(basketTypes ?? []).map((bt) => (
+            <div key={bt.id} className="flex justify-between border-b border-border py-2 text-sm last:border-0">
+              <span className="font-medium">{bt.label}</span>
               <span className="text-muted-foreground">
-                Dépôt {formatFcfa(t.required_deposit_amount)} · {t.missions_per_tier} missions à{" "}
-                {formatFcfa(t.mission_reward_amount)}
+                Cotisation {formatFcfa(bt.contribution_amount)} / {bt.interval_days} j · round de{" "}
+                {bt.round_length_days} j · gain {formatFcfa(bt.payout_amount ?? 0)}
               </span>
             </div>
           ))}

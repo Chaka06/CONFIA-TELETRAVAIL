@@ -17,75 +17,101 @@ export function signupOtpEmail(params: { code: string }): EmailTemplate {
   };
 }
 
-export function depositConfirmedEmail(params: { amount: number; tierNumber: number; dashboardUrl: string }): EmailTemplate {
+export function contributionConfirmedEmail(params: { amount: number }): EmailTemplate {
   return {
-    subject: "Votre dépôt a été confirmé",
+    subject: "Votre cotisation a été confirmée",
     html: renderEmailLayout({
-      title: "Dépôt confirmé",
+      title: "Cotisation confirmée",
       paragraphs: [
-        `Votre dépôt de <strong>${formatFcfa(params.amount)}</strong> pour le palier ${params.tierNumber} a été confirmé avec succès.`,
-        `Vos missions rémunérées correspondantes sont désormais disponibles dans votre tableau de bord.`,
-      ],
-      button: { label: "Voir mes missions", url: params.dashboardUrl },
-    }),
-  };
-}
-
-export function depositFailedEmail(params: { amount: number; reason: string; retryUrl: string }): EmailTemplate {
-  return {
-    subject: "Votre dépôt n'a pas abouti",
-    html: renderEmailLayout({
-      title: "Dépôt non abouti",
-      paragraphs: [
-        `Votre dépôt de <strong>${formatFcfa(params.amount)}</strong> n'a pas pu être confirmé (${params.reason}).`,
-        `Aucun montant n'a été débité de façon définitive. Vous pouvez réessayer à tout moment.`,
-      ],
-      button: { label: "Réessayer le dépôt", url: params.retryUrl },
-    }),
-  };
-}
-
-export function withdrawalApprovedEmail(params: { amount: number }): EmailTemplate {
-  return {
-    subject: "Votre retrait a été effectué",
-    html: renderEmailLayout({
-      title: "Retrait effectué",
-      paragraphs: [
-        `Votre retrait de <strong>${formatFcfa(params.amount)}</strong> a été validé et envoyé vers le moyen de paiement que vous avez indiqué.`,
-        `Le délai de réception dépend de votre opérateur mobile money ou de votre banque.`,
+        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> a bien été reçue.`,
+        "Merci de votre régularité — c'est ce qui garantit que chacun soit payé à son tour.",
       ],
     }),
   };
 }
 
-export function withdrawalRejectedEmail(params: { amount: number; reason: string; dashboardUrl: string }): EmailTemplate {
+export function contributionFailedEmail(params: { amount: number; reason: string }): EmailTemplate {
   return {
-    subject: "Votre demande de retrait a été refusée",
+    subject: "Votre cotisation n'a pas abouti",
     html: renderEmailLayout({
-      title: "Retrait refusé",
+      title: "Cotisation non aboutie",
       paragraphs: [
-        `Votre demande de retrait de <strong>${formatFcfa(params.amount)}</strong> a été refusée (${params.reason}).`,
-        `Le montant a été recrédité intégralement sur votre solde disponible.`,
+        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> n'a pas pu être confirmée (${params.reason}).`,
+        "Merci de réessayer rapidement : au-delà du jour de l'échéance, votre place dans le panier n'est plus garantie.",
       ],
-      button: { label: "Voir mon solde", url: params.dashboardUrl },
     }),
   };
 }
 
-export function referralCommissionCreditedEmail(params: {
+export function contributionReminderEmail(params: {
   amount: number;
-  refereeFirstName: string;
-  milestone: "palier 2" | "palier 4";
-  dashboardUrl: string;
+  basketLabel: string;
+  payUrl: string;
 }): EmailTemplate {
   return {
-    subject: "Commission de parrainage créditée",
+    subject: `Cotisation due aujourd'hui — ${params.basketLabel}`,
     html: renderEmailLayout({
-      title: "Commission de parrainage créditée",
+      title: "Votre cotisation est due aujourd'hui",
       paragraphs: [
-        `<strong>${formatFcfa(params.amount)}</strong> viennent d'être crédités sur votre solde : votre filleul ${params.refereeFirstName} a validé son ${params.milestone}.`,
+        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> pour le ${params.basketLabel} est due aujourd'hui.`,
+        "Cliquez sur le bouton ci-dessous pour payer en quelques secondes.",
       ],
-      button: { label: "Voir mes parrainages", url: params.dashboardUrl },
+      button: { label: "Payer ma cotisation", url: params.payUrl },
+      footnote: "Important : si le paiement n'est pas effectué aujourd'hui, votre place dans le panier sera automatiquement libérée demain.",
+    }),
+  };
+}
+
+export function basketFullEmail(params: { basketLabel: string; roundStartedOn: string }): EmailTemplate {
+  return {
+    subject: `${params.basketLabel} est complet !`,
+    html: renderEmailLayout({
+      title: "Votre panier est complet",
+      paragraphs: [
+        `Le <strong>${params.basketLabel}</strong> vient d'atteindre ses 10 membres.`,
+        `Vos cotisations démarrent le <strong>${params.roundStartedOn}</strong>. Vous recevrez un rappel par e-mail à chaque échéance.`,
+      ],
+    }),
+  };
+}
+
+export function memberRemovedEmail(params: { basketLabel: string }): EmailTemplate {
+  return {
+    subject: `Retrait du ${params.basketLabel}`,
+    html: renderEmailLayout({
+      title: "Vous avez été retiré du panier",
+      paragraphs: [
+        `Votre cotisation n'ayant pas été réglée à temps, vous avez été retiré du <strong>${params.basketLabel}</strong>.`,
+        "Vous pouvez rejoindre un autre panier (ou une nouvelle place dans le même) à tout moment depuis votre tableau de bord.",
+      ],
+    }),
+  };
+}
+
+export function payoutReadyEmail(params: { basketLabel: string; amount: number; claimUrl: string }): EmailTemplate {
+  return {
+    subject: `Félicitations, vous remportez le ${params.basketLabel} !`,
+    html: renderEmailLayout({
+      title: "Votre gain est prêt",
+      paragraphs: [
+        `C'est votre tour : vous remportez <strong>${formatFcfa(params.amount)}</strong> sur le ${params.basketLabel}.`,
+        "Cliquez sur le bouton ci-dessous pour indiquer votre numéro et le moyen de paiement (Orange Money, Wave, MTN Money ou Moov Money) sur lequel vous souhaitez le recevoir.",
+      ],
+      button: { label: "Recevoir mon gain", url: params.claimUrl },
+      footnote: "Ce lien est personnel, ne le partagez avec personne.",
+    }),
+  };
+}
+
+export function payoutConfirmedEmail(params: { amount: number }): EmailTemplate {
+  return {
+    subject: "Votre gain a été versé",
+    html: renderEmailLayout({
+      title: "Gain versé",
+      paragraphs: [
+        `Votre gain de <strong>${formatFcfa(params.amount)}</strong> vient de vous être envoyé.`,
+        "Merci de votre confiance — n'hésitez pas à rejoindre un nouveau panier dès maintenant.",
+      ],
     }),
   };
 }

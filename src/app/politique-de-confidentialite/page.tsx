@@ -52,10 +52,10 @@ export default function PolitiqueConfidentialitePage() {
                 <li>Identité : prénom, nom, date de naissance ;</li>
                 <li>Coordonnées : adresse e-mail, numéro de téléphone, ville de résidence ;</li>
                 <li>Identifiants de connexion : mot de passe (stocké uniquement sous forme hashée, jamais en clair) ;</li>
-                <li>Données d&apos;activité sur la plateforme : missions réalisées, progression, dépôts, retraits, parrainages, historique de connexion ;</li>
+                <li>Données d&apos;activité sur la plateforme : paniers rejoints, cotisations, gains, historique de connexion ;</li>
                 <li>
-                  Coordonnées de destination des retraits (numéro mobile money ou coordonnées
-                  bancaires) fournies directement par l&apos;Utilisateur lors d&apos;une demande de retrait.
+                  Coordonnées de destination des gains (numéro mobile money) fournies directement par
+                  l&apos;Utilisateur bénéficiaire lors de la réclamation d&apos;un gain.
                 </li>
               </ul>
               <p>
@@ -69,9 +69,9 @@ export default function PolitiqueConfidentialitePage() {
               <p>Vos données sont utilisées pour :</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Créer et gérer votre compte, et vérifier votre identité et votre éligibilité (âge minimum) ;</li>
-                <li>Exécuter le Service : attribution des missions, suivi de la progression, traitement des dépôts et retraits ;</li>
-                <li>Vous envoyer les communications nécessaires au fonctionnement du compte (code de confirmation d&apos;inscription, notifications relatives à vos dépôts/retraits/missions) ;</li>
-                <li>Prévenir la fraude et les abus (comptes multiples, contournement des règles de parrainage) ;</li>
+                <li>Exécuter le Service : gestion des paniers, suivi de l&apos;ordre d&apos;arrivée, traitement des cotisations et des gains ;</li>
+                <li>Vous envoyer les communications nécessaires au fonctionnement du compte (code de confirmation d&apos;inscription, rappels de cotisation, notifications de gain) ;</li>
+                <li>Prévenir la fraude et les abus (comptes multiples, tentatives de contournement de l&apos;ordre d&apos;arrivée) ;</li>
                 <li>Répondre à vos demandes adressées à notre support.</li>
               </ul>
               <p>Nous n&apos;utilisons pas vos données à des fins de publicité ciblée et ne les vendons à aucun tiers.</p>

@@ -82,7 +82,7 @@ describe("geniusPayProvider.verifyWebhookSignature", () => {
 });
 
 describe("geniusPayProvider.parseWebhookEvent", () => {
-  it("interprète un paiement réussi et récupère le deposit_id depuis les metadata", () => {
+  it("interprète un paiement réussi et récupère le contribution_id depuis les metadata", () => {
     const payload = {
       id: "evt_1",
       event: "payment.success",
@@ -91,16 +91,16 @@ describe("geniusPayProvider.parseWebhookEvent", () => {
         object: "transaction",
         id: 456,
         reference: "MTX-A1B2C3D4E5",
-        amount: 2000,
+        amount: 1000,
         status: "completed",
-        metadata: { deposit_id: "deposit-uuid" },
+        metadata: { contribution_id: "contribution-uuid" },
       },
       environment: "sandbox",
     };
     const result = geniusPayProvider.parseWebhookEvent(JSON.stringify(payload));
     expect(result).toEqual({
-      type: "deposit.confirmed",
-      depositId: "deposit-uuid",
+      type: "contribution.confirmed",
+      contributionId: "contribution-uuid",
       providerReference: "MTX-A1B2C3D4E5",
       providerEventId: "evt_1",
     });
@@ -115,65 +115,41 @@ describe("geniusPayProvider.parseWebhookEvent", () => {
         object: "transaction",
         id: 457,
         reference: "MTX-B2C3D4E5F6",
-        amount: 2000,
+        amount: 1000,
         status: "failed",
         failure_reason: "Solde insuffisant",
-        metadata: { deposit_id: "deposit-uuid-2" },
+        metadata: { contribution_id: "contribution-uuid-2" },
       },
       environment: "sandbox",
     };
     const result = geniusPayProvider.parseWebhookEvent(JSON.stringify(payload));
     expect(result).toEqual({
-      type: "deposit.failed",
-      depositId: "deposit-uuid-2",
+      type: "contribution.failed",
+      contributionId: "contribution-uuid-2",
       providerReference: "MTX-B2C3D4E5F6",
       reason: "Solde insuffisant",
       providerEventId: "evt_2",
     });
   });
 
-  it("interprète un cashout complété via metadata.withdrawal_id", () => {
+  it("classe les événements sans action métier comme 'ignored' (ex: payment.initiated, cashout.*)", () => {
     const payload = {
       id: "evt_3",
-      event: "cashout.completed",
-      timestamp: Math.floor(Date.now() / 1000),
-      data: {
-        object: "transaction",
-        id: 458,
-        reference: "MTX-C3D4E5F6G7",
-        amount: 5000,
-        status: "completed",
-        metadata: { withdrawal_id: "withdrawal-uuid" },
-      },
-      environment: "sandbox",
-    };
-    const result = geniusPayProvider.parseWebhookEvent(JSON.stringify(payload));
-    expect(result).toEqual({
-      type: "payout.completed",
-      withdrawalId: "withdrawal-uuid",
-      providerReference: "MTX-C3D4E5F6G7",
-      providerEventId: "evt_3",
-    });
-  });
-
-  it("classe les événements sans action métier comme 'ignored' (ex: payment.initiated)", () => {
-    const payload = {
-      id: "evt_4",
       event: "payment.initiated",
       timestamp: Math.floor(Date.now() / 1000),
-      data: { object: "transaction", id: 459, reference: "MTX-D4E5F6G7H8", amount: 2000, status: "pending" },
+      data: { object: "transaction", id: 458, reference: "MTX-C3D4E5F6G7", amount: 1000, status: "pending" },
       environment: "sandbox",
     };
     const result = geniusPayProvider.parseWebhookEvent(JSON.stringify(payload));
-    expect(result).toEqual({ type: "ignored", rawEvent: "payment.initiated", providerEventId: "evt_4" });
+    expect(result).toEqual({ type: "ignored", rawEvent: "payment.initiated", providerEventId: "evt_3" });
   });
 
-  it("lève une erreur explicite si metadata.deposit_id est absent sur un paiement réussi", () => {
+  it("lève une erreur explicite si metadata.contribution_id est absent sur un paiement réussi", () => {
     const payload = {
-      id: "evt_5",
+      id: "evt_4",
       event: "payment.success",
       timestamp: Math.floor(Date.now() / 1000),
-      data: { object: "transaction", id: 460, reference: "MTX-E5F6G7H8I9", amount: 2000, status: "completed" },
+      data: { object: "transaction", id: 459, reference: "MTX-D4E5F6G7H8", amount: 1000, status: "completed" },
       environment: "sandbox",
     };
     expect(() => geniusPayProvider.parseWebhookEvent(JSON.stringify(payload))).toThrow();

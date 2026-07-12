@@ -81,108 +81,6 @@ export type Database = {
           },
         ]
       }
-      cycle_tiers: {
-        Row: {
-          completed_at: string | null
-          cycle_id: string
-          id: string
-          missions_completed_count: number
-          status: Database["public"]["Enums"]["tier_status"]
-          tier_number: number
-          unlocked_at: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          cycle_id: string
-          id?: string
-          missions_completed_count?: number
-          status?: Database["public"]["Enums"]["tier_status"]
-          tier_number: number
-          unlocked_at?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          cycle_id?: string
-          id?: string
-          missions_completed_count?: number
-          status?: Database["public"]["Enums"]["tier_status"]
-          tier_number?: number
-          unlocked_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cycle_tiers_cycle_id_fkey"
-            columns: ["cycle_id"]
-            isOneToOne: false
-            referencedRelation: "mission_cycles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cycle_tiers_tier_number_fkey"
-            columns: ["tier_number"]
-            isOneToOne: false
-            referencedRelation: "tier_definitions"
-            referencedColumns: ["tier_number"]
-          },
-        ]
-      }
-      deposits: {
-        Row: {
-          amount: number
-          confirmed_at: string | null
-          cycle_tier_id: string
-          failed_reason: string | null
-          id: string
-          initiated_at: string
-          payment_provider: string
-          provider_payload: Json
-          provider_reference: string | null
-          status: Database["public"]["Enums"]["payment_status"]
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          confirmed_at?: string | null
-          cycle_tier_id: string
-          failed_reason?: string | null
-          id?: string
-          initiated_at?: string
-          payment_provider?: string
-          provider_payload?: Json
-          provider_reference?: string | null
-          status?: Database["public"]["Enums"]["payment_status"]
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          confirmed_at?: string | null
-          cycle_tier_id?: string
-          failed_reason?: string | null
-          id?: string
-          initiated_at?: string
-          payment_provider?: string
-          provider_payload?: Json
-          provider_reference?: string | null
-          status?: Database["public"]["Enums"]["payment_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "deposits_cycle_tier_id_fkey"
-            columns: ["cycle_tier_id"]
-            isOneToOne: false
-            referencedRelation: "cycle_tiers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deposits_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_logs: {
         Row: {
           created_at: string
@@ -263,162 +161,6 @@ export type Database = {
           max_attempts?: number
           purpose?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      mission_assignments: {
-        Row: {
-          assigned_at: string
-          content_hash: string | null
-          cycle_id: string
-          expected_answer: Json
-          expires_at: string | null
-          id: string
-          reward_amount: number
-          slot_number: number
-          status: Database["public"]["Enums"]["mission_assignment_status"]
-          submission_data: Json | null
-          submitted_at: string | null
-          template_id: string
-          tier_number: number
-          user_id: string
-          validated_at: string | null
-          variant_content: Json
-          variant_seed: string
-        }
-        Insert: {
-          assigned_at?: string
-          content_hash?: string | null
-          cycle_id: string
-          expected_answer: Json
-          expires_at?: string | null
-          id?: string
-          reward_amount: number
-          slot_number: number
-          status?: Database["public"]["Enums"]["mission_assignment_status"]
-          submission_data?: Json | null
-          submitted_at?: string | null
-          template_id: string
-          tier_number: number
-          user_id: string
-          validated_at?: string | null
-          variant_content: Json
-          variant_seed: string
-        }
-        Update: {
-          assigned_at?: string
-          content_hash?: string | null
-          cycle_id?: string
-          expected_answer?: Json
-          expires_at?: string | null
-          id?: string
-          reward_amount?: number
-          slot_number?: number
-          status?: Database["public"]["Enums"]["mission_assignment_status"]
-          submission_data?: Json | null
-          submitted_at?: string | null
-          template_id?: string
-          tier_number?: number
-          user_id?: string
-          validated_at?: string | null
-          variant_content?: Json
-          variant_seed?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mission_assignments_cycle_id_fkey"
-            columns: ["cycle_id"]
-            isOneToOne: false
-            referencedRelation: "mission_cycles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mission_assignments_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "mission_templates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mission_assignments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mission_cycles: {
-        Row: {
-          completed_at: string | null
-          current_tier: number
-          cycle_number: number
-          id: string
-          started_at: string
-          status: Database["public"]["Enums"]["cycle_status"]
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          current_tier?: number
-          cycle_number: number
-          id?: string
-          started_at?: string
-          status?: Database["public"]["Enums"]["cycle_status"]
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          current_tier?: number
-          cycle_number?: number
-          id?: string
-          started_at?: string
-          status?: Database["public"]["Enums"]["cycle_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mission_cycles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mission_templates: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          estimated_duration_seconds: number
-          generator_key: string
-          id: string
-          is_active: boolean
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description: string
-          estimated_duration_seconds?: number
-          generator_key: string
-          id?: string
-          is_active?: boolean
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          estimated_duration_seconds?: number
-          generator_key?: string
-          id?: string
-          is_active?: boolean
-          title?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -507,8 +249,6 @@ export type Database = {
           last_login_at: string | null
           last_name: string
           phone_number: string
-          referral_code: string
-          referred_by: string | null
           role: Database["public"]["Enums"]["app_role"]
           status: Database["public"]["Enums"]["account_status"]
           updated_at: string
@@ -524,8 +264,6 @@ export type Database = {
           last_login_at?: string | null
           last_name: string
           phone_number: string
-          referral_code: string
-          referred_by?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
@@ -541,105 +279,272 @@ export type Database = {
           last_login_at?: string | null
           last_name?: string
           phone_number?: string
-          referral_code?: string
-          referred_by?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
         }
+        Relationships: []
+      }
+      tontine_basket_instances: {
+        Row: {
+          basket_type_id: string
+          created_at: string
+          filled_at: string | null
+          id: string
+          member_count: number
+          round_number: number
+          round_started_on: string | null
+          status: Database["public"]["Enums"]["basket_instance_status"]
+        }
+        Insert: {
+          basket_type_id: string
+          created_at?: string
+          filled_at?: string | null
+          id?: string
+          member_count?: number
+          round_number?: number
+          round_started_on?: string | null
+          status?: Database["public"]["Enums"]["basket_instance_status"]
+        }
+        Update: {
+          basket_type_id?: string
+          created_at?: string
+          filled_at?: string | null
+          id?: string
+          member_count?: number
+          round_number?: number
+          round_started_on?: string | null
+          status?: Database["public"]["Enums"]["basket_instance_status"]
+        }
         Relationships: [
           {
-            foreignKeyName: "profiles_referred_by_fkey"
-            columns: ["referred_by"]
+            foreignKeyName: "tontine_basket_instances_basket_type_id_fkey"
+            columns: ["basket_type_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "tontine_basket_types"
             referencedColumns: ["id"]
           },
         ]
       }
-      referral_commissions: {
+      tontine_basket_types: {
+        Row: {
+          capacity: number
+          contribution_amount: number
+          contributions_per_round: number
+          created_at: string
+          id: string
+          interval_days: number
+          is_active: boolean
+          label: string
+          payout_amount: number | null
+          round_length_days: number | null
+        }
+        Insert: {
+          capacity?: number
+          contribution_amount: number
+          contributions_per_round?: number
+          created_at?: string
+          id?: string
+          interval_days: number
+          is_active?: boolean
+          label: string
+          payout_amount?: number | null
+          round_length_days?: number | null
+        }
+        Update: {
+          capacity?: number
+          contribution_amount?: number
+          contributions_per_round?: number
+          created_at?: string
+          id?: string
+          interval_days?: number
+          is_active?: boolean
+          label?: string
+          payout_amount?: number | null
+          round_length_days?: number | null
+        }
+        Relationships: []
+      }
+      tontine_contributions: {
         Row: {
           amount: number
           created_at: string
-          cycle_id: string
+          due_date: string
           id: string
-          referee_id: string
-          referrer_id: string
-          status: string
-          trigger_type: Database["public"]["Enums"]["referral_commission_trigger"]
+          membership_id: string
+          occurrence_number: number
+          paid_at: string | null
+          payment_provider: string
+          provider_payload: Json
+          provider_reference: string | null
+          reminder_sent_at: string | null
+          round_number: number
+          status: Database["public"]["Enums"]["contribution_status"]
         }
         Insert: {
           amount: number
           created_at?: string
-          cycle_id: string
+          due_date: string
           id?: string
-          referee_id: string
-          referrer_id: string
-          status?: string
-          trigger_type: Database["public"]["Enums"]["referral_commission_trigger"]
+          membership_id: string
+          occurrence_number: number
+          paid_at?: string | null
+          payment_provider?: string
+          provider_payload?: Json
+          provider_reference?: string | null
+          reminder_sent_at?: string | null
+          round_number: number
+          status?: Database["public"]["Enums"]["contribution_status"]
         }
         Update: {
           amount?: number
           created_at?: string
-          cycle_id?: string
+          due_date?: string
           id?: string
-          referee_id?: string
-          referrer_id?: string
-          status?: string
-          trigger_type?: Database["public"]["Enums"]["referral_commission_trigger"]
+          membership_id?: string
+          occurrence_number?: number
+          paid_at?: string | null
+          payment_provider?: string
+          provider_payload?: Json
+          provider_reference?: string | null
+          reminder_sent_at?: string | null
+          round_number?: number
+          status?: Database["public"]["Enums"]["contribution_status"]
         }
         Relationships: [
           {
-            foreignKeyName: "referral_commissions_cycle_id_fkey"
-            columns: ["cycle_id"]
+            foreignKeyName: "tontine_contributions_membership_id_fkey"
+            columns: ["membership_id"]
             isOneToOne: false
-            referencedRelation: "mission_cycles"
+            referencedRelation: "tontine_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tontine_memberships: {
+        Row: {
+          basket_instance_id: string
+          id: string
+          join_order: number
+          joined_at: string
+          paid_out_at: string | null
+          removed_at: string | null
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Insert: {
+          basket_instance_id: string
+          id?: string
+          join_order: number
+          joined_at?: string
+          paid_out_at?: string | null
+          removed_at?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Update: {
+          basket_instance_id?: string
+          id?: string
+          join_order?: number
+          joined_at?: string
+          paid_out_at?: string | null
+          removed_at?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tontine_memberships_basket_instance_id_fkey"
+            columns: ["basket_instance_id"]
+            isOneToOne: false
+            referencedRelation: "tontine_basket_instances"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "referral_commissions_referee_id_fkey"
-            columns: ["referee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "referral_commissions_referrer_id_fkey"
-            columns: ["referrer_id"]
+            foreignKeyName: "tontine_memberships_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      tier_definitions: {
+      tontine_payouts: {
         Row: {
-          label: string
-          mission_reward_amount: number
-          missions_per_tier: number
-          required_deposit_amount: number
-          tier_number: number
+          amount: number
+          basket_instance_id: string
+          beneficiary_payment_method: string | null
+          beneficiary_phone: string | null
+          beneficiary_submitted_at: string | null
+          beneficiary_token: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          membership_id: string
+          provider_reference: string | null
+          round_number: number
+          status: Database["public"]["Enums"]["payout_status"]
         }
         Insert: {
-          label: string
-          mission_reward_amount: number
-          missions_per_tier?: number
-          required_deposit_amount: number
-          tier_number: number
+          amount: number
+          basket_instance_id: string
+          beneficiary_payment_method?: string | null
+          beneficiary_phone?: string | null
+          beneficiary_submitted_at?: string | null
+          beneficiary_token?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          membership_id: string
+          provider_reference?: string | null
+          round_number: number
+          status?: Database["public"]["Enums"]["payout_status"]
         }
         Update: {
-          label?: string
-          mission_reward_amount?: number
-          missions_per_tier?: number
-          required_deposit_amount?: number
-          tier_number?: number
+          amount?: number
+          basket_instance_id?: string
+          beneficiary_payment_method?: string | null
+          beneficiary_phone?: string | null
+          beneficiary_submitted_at?: string | null
+          beneficiary_token?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          membership_id?: string
+          provider_reference?: string | null
+          round_number?: number
+          status?: Database["public"]["Enums"]["payout_status"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tontine_payouts_basket_instance_id_fkey"
+            columns: ["basket_instance_id"]
+            isOneToOne: false
+            referencedRelation: "tontine_basket_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tontine_payouts_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tontine_payouts_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "tontine_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
           amount: number
-          balance_after: number
           created_at: string
           description: string
           id: string
@@ -651,7 +556,6 @@ export type Database = {
         }
         Insert: {
           amount: number
-          balance_after: number
           created_at?: string
           description: string
           id?: string
@@ -663,7 +567,6 @@ export type Database = {
         }
         Update: {
           amount?: number
-          balance_after?: number
           created_at?: string
           description?: string
           id?: string
@@ -683,319 +586,72 @@ export type Database = {
           },
         ]
       }
-      wallets: {
-        Row: {
-          balance: number
-          lifetime_deposited: number
-          lifetime_mission_earnings: number
-          lifetime_referral_earnings: number
-          lifetime_withdrawn: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          balance?: number
-          lifetime_deposited?: number
-          lifetime_mission_earnings?: number
-          lifetime_referral_earnings?: number
-          lifetime_withdrawn?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          balance?: number
-          lifetime_deposited?: number
-          lifetime_mission_earnings?: number
-          lifetime_referral_earnings?: number
-          lifetime_withdrawn?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      withdrawal_rights: {
-        Row: {
-          cap_amount: number
-          granted_at: string
-          id: string
-          source_cycle_id: string
-          status: string
-          used_at: string | null
-          user_id: string
-        }
-        Insert: {
-          cap_amount?: number
-          granted_at?: string
-          id?: string
-          source_cycle_id: string
-          status?: string
-          used_at?: string | null
-          user_id: string
-        }
-        Update: {
-          cap_amount?: number
-          granted_at?: string
-          id?: string
-          source_cycle_id?: string
-          status?: string
-          used_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "withdrawal_rights_source_cycle_id_fkey"
-            columns: ["source_cycle_id"]
-            isOneToOne: true
-            referencedRelation: "mission_cycles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "withdrawal_rights_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      withdrawals: {
-        Row: {
-          amount: number
-          destination_details: Json
-          destination_provider: string
-          id: string
-          is_unrestricted: boolean
-          processed_at: string | null
-          processed_by: string | null
-          provider_reference: string | null
-          rejected_reason: string | null
-          requested_at: string
-          status: Database["public"]["Enums"]["withdrawal_status"]
-          user_id: string
-          withdrawal_right_id: string | null
-        }
-        Insert: {
-          amount: number
-          destination_details: Json
-          destination_provider?: string
-          id?: string
-          is_unrestricted?: boolean
-          processed_at?: string | null
-          processed_by?: string | null
-          provider_reference?: string | null
-          rejected_reason?: string | null
-          requested_at?: string
-          status?: Database["public"]["Enums"]["withdrawal_status"]
-          user_id: string
-          withdrawal_right_id?: string | null
-        }
-        Update: {
-          amount?: number
-          destination_details?: Json
-          destination_provider?: string
-          id?: string
-          is_unrestricted?: boolean
-          processed_at?: string | null
-          processed_by?: string | null
-          provider_reference?: string | null
-          rejected_reason?: string | null
-          requested_at?: string
-          status?: Database["public"]["Enums"]["withdrawal_status"]
-          user_id?: string
-          withdrawal_right_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "withdrawals_processed_by_fkey"
-            columns: ["processed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "withdrawals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "withdrawals_withdrawal_right_id_fkey"
-            columns: ["withdrawal_right_id"]
-            isOneToOne: false
-            referencedRelation: "withdrawal_rights"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      admin_approve_withdrawal: {
-        Args: {
-          p_processed_by?: string
-          p_provider_reference: string
-          p_withdrawal_id: string
-        }
-        Returns: undefined
-      }
-      admin_reject_withdrawal: {
-        Args: {
-          p_processed_by?: string
-          p_reason: string
-          p_withdrawal_id: string
-        }
-        Returns: undefined
-      }
-      confirm_deposit: {
-        Args: {
-          p_deposit_id: string
-          p_provider_payload?: Json
-          p_provider_reference: string
-        }
-        Returns: undefined
-      }
-      fail_deposit: {
-        Args: { p_deposit_id: string; p_reason: string }
-        Returns: undefined
-      }
-      finalize_withdrawal_payout: {
-        Args: {
-          p_approved: boolean
-          p_provider_reference?: string
-          p_reason?: string
-          p_withdrawal_id: string
-        }
-        Returns: undefined
-      }
-      fmt_fcfa: { Args: { p_amount: number }; Returns: string }
-      fn_apply_wallet_delta: {
-        Args: {
-          p_delta: number
-          p_description: string
-          p_metadata?: Json
-          p_reference_id: string
-          p_reference_table: string
-          p_type: Database["public"]["Enums"]["transaction_type"]
-          p_user_id: string
-        }
-        Returns: number
-      }
-      fn_finalize_mission_assignment: {
-        Args: { p_approved: boolean; p_assignment_id: string }
-        Returns: undefined
-      }
-      fn_generate_analyse_texte: { Args: never; Returns: Json }
-      fn_generate_classification: { Args: never; Returns: Json }
-      fn_generate_one_mission: {
-        Args: { p_cycle_tier_id: string; p_slot_number: number }
-        Returns: undefined
-      }
-      fn_generate_questionnaire: { Args: never; Returns: Json }
-      fn_generate_redaction_contrainte: { Args: never; Returns: Json }
-      fn_generate_test_logique: { Args: never; Returns: Json }
-      fn_generate_tier_missions: {
-        Args: { p_cycle_tier_id: string }
-        Returns: undefined
-      }
-      fn_generate_validation_contenu: { Args: never; Returns: Json }
-      fn_generate_verification_info: { Args: never; Returns: Json }
-      fn_grade_classification: {
-        Args: { p_expected: Json; p_submission: Json }
-        Returns: boolean
-      }
-      fn_grade_redaction_contrainte: {
-        Args: { p_expected: Json; p_submission: Json }
-        Returns: boolean
-      }
-      fn_start_new_cycle: {
-        Args: { p_cycle_number: number; p_user_id: string }
-        Returns: string
-      }
-      generate_referral_code: { Args: never; Returns: string }
-      initiate_deposit: {
-        Args: { p_cycle_tier_id: string }
+      admin_confirm_payout: {
+        Args: { p_payout_id: string; p_processed_by: string }
         Returns: {
-          amount: number
-          confirmed_at: string | null
-          cycle_tier_id: string
-          failed_reason: string | null
-          id: string
-          initiated_at: string
-          payment_provider: string
-          provider_payload: Json
-          provider_reference: string | null
-          status: Database["public"]["Enums"]["payment_status"]
+          basket_instance_id: string
+          basket_label: string
+          email: string
+          first_name: string
           user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "deposits"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        }[]
+      }
+      fn_cancel_failed_join: {
+        Args: { p_contribution_id: string }
+        Returns: undefined
+      }
+      fn_confirm_contribution: {
+        Args: { p_contribution_id: string; p_provider_reference: string }
+        Returns: {
+          basket_instance_id: string
+          should_start_round: boolean
+        }[]
+      }
+      fn_daily_tontine_sweep: { Args: never; Returns: Json }
+      fn_start_round: {
+        Args: { p_instance_id: string }
+        Returns: {
+          email: string
+          first_name: string
+          user_id: string
+        }[]
       }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      request_withdrawal: {
-        Args: { p_amount: number; p_destination_details: Json }
+      join_basket: {
+        Args: { p_basket_type_id: string }
         Returns: {
           amount: number
-          destination_details: Json
-          destination_provider: string
-          id: string
-          is_unrestricted: boolean
-          processed_at: string | null
-          processed_by: string | null
-          provider_reference: string | null
-          rejected_reason: string | null
-          requested_at: string
-          status: Database["public"]["Enums"]["withdrawal_status"]
-          user_id: string
-          withdrawal_right_id: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "withdrawals"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+          basket_instance_id: string
+          contribution_id: string
+          membership_id: string
+        }[]
       }
-      submit_mission_assignment: {
-        Args: { p_assignment_id: string; p_submission_data: Json }
-        Returns: Json
+      submit_payout_beneficiary_info: {
+        Args: { p_payment_method: string; p_phone: string; p_token: string }
+        Returns: undefined
       }
     }
     Enums: {
       account_status: "active" | "suspended" | "banned"
       app_role: "user" | "admin" | "super_admin"
-      cycle_status: "in_progress" | "completed" | "abandoned"
-      mission_assignment_status:
-        | "assigned"
-        | "submitted"
-        | "validated"
-        | "rejected"
-        | "expired"
+      basket_instance_status: "filling" | "active" | "paused"
+      contribution_status: "pending" | "paid" | "missed"
+      membership_status: "active" | "removed_missed_payment" | "paid_out_left"
       notification_type:
-        | "deposit_confirmed"
-        | "deposit_failed"
-        | "withdrawal_approved"
-        | "withdrawal_rejected"
-        | "mission_validated"
-        | "mission_rejected"
-        | "tier_unlocked"
-        | "cycle_completed"
-        | "referral_commission_credited"
+        | "basket_joined"
+        | "basket_full"
+        | "contribution_due"
+        | "contribution_confirmed"
+        | "member_removed"
+        | "spot_opened"
+        | "payout_ready"
+        | "payout_confirmed"
         | "account_alert"
         | "system"
       payment_status:
@@ -1004,25 +660,8 @@ export type Database = {
         | "failed"
         | "cancelled"
         | "expired"
-      referral_commission_trigger: "tier_2_validated" | "tier_4_validated"
-      tier_status:
-        | "locked"
-        | "awaiting_deposit"
-        | "deposit_processing"
-        | "in_progress"
-        | "completed"
-      transaction_type:
-        | "deposit"
-        | "withdrawal"
-        | "mission_reward"
-        | "referral_commission"
-        | "adjustment"
-      withdrawal_status:
-        | "pending"
-        | "processing"
-        | "completed"
-        | "rejected"
-        | "cancelled"
+      payout_status: "pending" | "beneficiary_info_submitted" | "paid"
+      transaction_type: "contribution" | "payout" | "adjustment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1155,24 +794,18 @@ export const Constants = {
     Enums: {
       account_status: ["active", "suspended", "banned"],
       app_role: ["user", "admin", "super_admin"],
-      cycle_status: ["in_progress", "completed", "abandoned"],
-      mission_assignment_status: [
-        "assigned",
-        "submitted",
-        "validated",
-        "rejected",
-        "expired",
-      ],
+      basket_instance_status: ["filling", "active", "paused"],
+      contribution_status: ["pending", "paid", "missed"],
+      membership_status: ["active", "removed_missed_payment", "paid_out_left"],
       notification_type: [
-        "deposit_confirmed",
-        "deposit_failed",
-        "withdrawal_approved",
-        "withdrawal_rejected",
-        "mission_validated",
-        "mission_rejected",
-        "tier_unlocked",
-        "cycle_completed",
-        "referral_commission_credited",
+        "basket_joined",
+        "basket_full",
+        "contribution_due",
+        "contribution_confirmed",
+        "member_removed",
+        "spot_opened",
+        "payout_ready",
+        "payout_confirmed",
         "account_alert",
         "system",
       ],
@@ -1183,28 +816,8 @@ export const Constants = {
         "cancelled",
         "expired",
       ],
-      referral_commission_trigger: ["tier_2_validated", "tier_4_validated"],
-      tier_status: [
-        "locked",
-        "awaiting_deposit",
-        "deposit_processing",
-        "in_progress",
-        "completed",
-      ],
-      transaction_type: [
-        "deposit",
-        "withdrawal",
-        "mission_reward",
-        "referral_commission",
-        "adjustment",
-      ],
-      withdrawal_status: [
-        "pending",
-        "processing",
-        "completed",
-        "rejected",
-        "cancelled",
-      ],
+      payout_status: ["pending", "beneficiary_info_submitted", "paid"],
+      transaction_type: ["contribution", "payout", "adjustment"],
     },
   },
 } as const

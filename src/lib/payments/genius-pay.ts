@@ -7,8 +7,6 @@ import type {
   PaymentSession,
   PaymentSessionParams,
   PaymentWebhookEvent,
-  PayoutParams,
-  PayoutResult,
 } from "./types";
 
 /**
@@ -19,22 +17,16 @@ import type {
  *  - Authentification par deux en-têtes `X-API-Key` (publique) et
  *    `X-API-Secret` (secrète), jamais un `Authorization: Bearer`.
  *  - La création d'un paiement SANS `payment_method` renvoie une
- *    `checkout_url` hébergée (le client choisit Wave/Orange/MTN/carte...),
- *    ce qui est le mode retenu ici pour ne pas imposer un opérateur.
+ *    `checkout_url` hébergée (le client choisit Wave/Orange/MTN/carte...).
  *  - Genius Pay attribue lui-même la référence de transaction
- *    (`MTX-XXXXXXXXXX`) : on ne peut pas lui envoyer la nôtre. La
- *    corrélation avec nos enregistrements (`deposits.id` / `withdrawals.id`)
- *    se fait exclusivement via le champ `metadata`, renvoyé tel quel dans
- *    la réponse de création ET dans le webhook.
+ *    (`MTX-XXXXXXXXXX`) : la corrélation avec nos enregistrements
+ *    (`tontine_contributions.id`) se fait exclusivement via le champ
+ *    `metadata`, renvoyé tel quel dans la réponse de création ET dans le webhook.
  *  - Signature de webhook : HMAC-SHA256(`timestamp` + "." + corps brut,
- *    secret), avec une fenêtre anti-rejeu de 5 minutes — PAS une simple
- *    signature du corps seul.
+ *    secret), avec une fenêtre anti-rejeu de 5 minutes.
  *
- * ⚠️ Le endpoint exact de création de payout (retrait) n'était pas présent
- * dans la documentation fournie (seuls les événements webhook `cashout.*`
- * l'étaient) : `createPayout` ci-dessous suit la même convention que les
- * paiements par cohérence, mais DOIT être vérifié contre la page "Payouts"
- * de la documentation avant la mise en production.
+ * GeniusPay n'a pas (encore) d'API de payout : les gains de la tontine sont
+ * versés manuellement par l'administrateur, jamais via cet adaptateur.
  */
 
 const GENIUS_PAY_SIGNATURE_HEADER = "x-webhook-signature";
@@ -52,12 +44,6 @@ type GeniusPayPaymentData = {
   payment_url: string;
   status: string;
   metadata?: Record<string, unknown>;
-};
-
-type GeniusPayPayoutData = {
-  id: number;
-  reference: string;
-  status: "pending" | "processing" | "completed" | "failed";
 };
 
 type GeniusPayWebhookTransaction = {
@@ -117,7 +103,7 @@ class GeniusPayProvider implements PaymentProvider {
     return json.data;
   }
 
-  async createDepositSession(params: PaymentSessionParams): Promise<PaymentSession> {
+  async createContributionSession(params: PaymentSessionParams): Promise<PaymentSession> {
     const data = await this.call<GeniusPayPaymentData>("/payments", {
       amount: params.amount,
       currency: params.currency,
@@ -129,9 +115,7 @@ class GeniusPayProvider implements PaymentProvider {
       },
       success_url: params.successUrl,
       error_url: params.errorUrl,
-      // Seule voie de corrélation fiable avec notre dépôt : Genius Pay
-      // renvoie ce champ inchangé dans la réponse et dans le webhook.
-      metadata: { deposit_id: params.depositId },
+      metadata: { contribution_id: params.contributionId },
     });
 
     const redirectUrl = data.checkout_url ?? data.payment_url;
@@ -140,22 +124,6 @@ class GeniusPayProvider implements PaymentProvider {
     }
 
     return { redirectUrl, providerReference: data.reference };
-  }
-
-  async createPayout(params: PayoutParams): Promise<PayoutResult> {
-    // ⚠️ Endpoint non confirmé par la documentation fournie — à vérifier
-    // (chemin, forme du corps) avant toute utilisation en production.
-    const data = await this.call<GeniusPayPayoutData>("/payouts", {
-      amount: params.amount,
-      currency: params.currency,
-      recipient: {
-        phone: params.destination.phoneNumber,
-        name: params.destination.fullName,
-      },
-      metadata: { withdrawal_id: params.withdrawalId },
-    });
-
-    return { providerReference: data.reference, status: data.status };
   }
 
   verifyWebhookSignature(params: {
@@ -188,11 +156,11 @@ class GeniusPayProvider implements PaymentProvider {
 
     switch (payload.event) {
       case "payment.success": {
-        const depositId = metadata.deposit_id as string | undefined;
-        if (!depositId) throw new Error("Webhook payment.success sans metadata.deposit_id");
+        const contributionId = metadata.contribution_id as string | undefined;
+        if (!contributionId) throw new Error("Webhook payment.success sans metadata.contribution_id");
         return {
-          type: "deposit.confirmed",
-          depositId,
+          type: "contribution.confirmed",
+          contributionId,
           providerReference: payload.data.reference,
           providerEventId: payload.id,
         };
@@ -200,41 +168,21 @@ class GeniusPayProvider implements PaymentProvider {
       case "payment.failed":
       case "payment.cancelled":
       case "payment.expired": {
-        const depositId = metadata.deposit_id as string | undefined;
-        if (!depositId) throw new Error(`Webhook ${payload.event} sans metadata.deposit_id`);
+        const contributionId = metadata.contribution_id as string | undefined;
+        if (!contributionId) throw new Error(`Webhook ${payload.event} sans metadata.contribution_id`);
         return {
-          type: "deposit.failed",
-          depositId,
+          type: "contribution.failed",
+          contributionId,
           providerReference: payload.data.reference,
           reason: payload.data.failure_reason ?? payload.event,
           providerEventId: payload.id,
         };
       }
-      case "cashout.completed": {
-        const withdrawalId = metadata.withdrawal_id as string | undefined;
-        if (!withdrawalId) throw new Error("Webhook cashout.completed sans metadata.withdrawal_id");
-        return {
-          type: "payout.completed",
-          withdrawalId,
-          providerReference: payload.data.reference,
-          providerEventId: payload.id,
-        };
-      }
-      case "cashout.failed": {
-        const withdrawalId = metadata.withdrawal_id as string | undefined;
-        if (!withdrawalId) throw new Error("Webhook cashout.failed sans metadata.withdrawal_id");
-        return {
-          type: "payout.failed",
-          withdrawalId,
-          providerReference: payload.data.reference,
-          reason: payload.data.failure_reason ?? "cashout.failed",
-          providerEventId: payload.id,
-        };
-      }
       default:
-        // payment.initiated, payment.refunded, cashout.requested,
-        // cashout.approved, webhook.test : accusé de réception, aucune
-        // action métier nécessaire à ce stade du cycle de vie.
+        // payment.initiated, payment.refunded, cashout.*, webhook.test :
+        // accusé de réception, aucune action métier (aucun payout GeniusPay
+        // n'est jamais déclenché par cette app, donc aucun cashout.* ne
+        // devrait normalement arriver).
         return { type: "ignored", rawEvent: payload.event, providerEventId: payload.id };
     }
   }

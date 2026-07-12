@@ -2,23 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Gauge,
-  Gift,
-  History,
-  Layers,
-  Settings,
-  Wallet,
-} from "lucide-react";
+import { Gauge, PiggyBank, Settings } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/tableau-de-bord", label: "Aperçu", icon: Gauge, exact: true },
-  { href: "/tableau-de-bord/paliers", label: "Paliers & missions", icon: Layers },
-  { href: "/tableau-de-bord/retraits", label: "Retraits", icon: Wallet },
-  { href: "/tableau-de-bord/parrainage", label: "Parrainage", icon: Gift },
-  { href: "/tableau-de-bord/historique", label: "Historique", icon: History },
+  { href: "/tableau-de-bord/mes-paniers", label: "Mes paniers", icon: PiggyBank },
   { href: "/tableau-de-bord/parametres", label: "Paramètres", icon: Settings },
 ];
 

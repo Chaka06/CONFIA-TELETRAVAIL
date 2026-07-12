@@ -13,6 +13,10 @@ const TEXT_MUTED = "#9ca3af";
 const BORDER = "#dde2e9";
 const BG = "#eef1f5";
 const CONTACT_EMAIL = "contact@confssa.com";
+const SITE_URL = process.env.APP_BASE_URL ?? "https://confssa.com";
+// Fond clair dans l'en-tête (et non la bannière marine des autres blocs) :
+// le logo Confssa est en noir/vert, illisible sur fond sombre.
+const LOGO_URL = `${SITE_URL}/logo.png`;
 
 export { formatFcfa } from "@/lib/format";
 
@@ -77,8 +81,10 @@ export function renderEmailLayout(params: {
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color:#ffffff; border: 1px solid ${BORDER};">
             <tr>
-              <td style="background-color:${BRAND_NAVY}; padding: 24px 28px;">
-                <span style="color:#ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Confssa</span>
+              <td style="background-color:#ffffff; padding: 20px 28px; border-bottom: 1px solid ${BORDER};">
+                <a href="${SITE_URL}" style="display:inline-block;">
+                  <img src="${LOGO_URL}" alt="Confssa" width="152" height="32" style="display:block; border:0;" />
+                </a>
               </td>
             </tr>
             <tr>
@@ -92,7 +98,9 @@ export function renderEmailLayout(params: {
             </tr>
             <tr>
               <td style="padding: 18px 28px; background-color:#f7f8fa; border-top: 1px solid ${BORDER};">
-                <p style="margin:0 0 4px; font-size: 12px; color:${TEXT_MUTED};">Confssa — plateforme professionnelle de télétravail rémunéré.</p>
+                <p style="margin:0 0 4px; font-size: 12px; color:${TEXT_MUTED};">
+                  <a href="${SITE_URL}" style="color:${BRAND_NAVY}; text-decoration:none; font-weight: 600;">Confssa</a> — plateforme professionnelle de télétravail rémunéré.
+                </p>
                 <p style="margin:0; font-size: 12px; color:${TEXT_MUTED};">Une question, une réclamation ? Écrivez-nous : <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND_NAVY};">${CONTACT_EMAIL}</a></p>
               </td>
             </tr>

@@ -2,23 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Gauge,
-  ScrollText,
-  Settings,
-  Users,
-  Wallet,
-  WalletCards,
-  ClipboardCheck,
-} from "lucide-react";
+import { Gauge, PiggyBank, ScrollText, Settings, Trophy, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/pouri", label: "Aperçu", icon: Gauge, exact: true },
-  { href: "/pouri/depots", label: "Dépôts", icon: Wallet },
-  { href: "/pouri/missions", label: "Missions", icon: ClipboardCheck },
-  { href: "/pouri/retraits", label: "Retraits", icon: WalletCards },
+  { href: "/pouri/paniers", label: "Paniers", icon: PiggyBank },
+  { href: "/pouri/gains", label: "Gains à verser", icon: Trophy },
   { href: "/pouri/utilisateurs", label: "Utilisateurs", icon: Users },
   { href: "/pouri/audit", label: "Journal d'audit", icon: ScrollText },
   { href: "/pouri/parametres", label: "Paramètres", icon: Settings },

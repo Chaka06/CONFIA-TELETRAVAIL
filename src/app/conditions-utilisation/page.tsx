@@ -41,9 +41,10 @@ export default function ConditionsUtilisationPage() {
             <Section title="1. Objet">
               <p>
                 Les présentes conditions générales d&apos;utilisation (« CGU ») régissent l&apos;accès et
-                l&apos;utilisation de la plateforme Confssa (le « Service »), qui propose à ses
-                utilisateurs (les « Utilisateurs ») d&apos;accomplir des micro-missions rémunérées en
-                télétravail, organisées selon un système de progression par paliers.
+                l&apos;utilisation de la plateforme Confssa (le « Service »), qui organise des tontines
+                en ligne : des paniers de cotisation regroupant 10 membres, où chacun cotise à
+                échéance fixe et reçoit à son tour l&apos;intégralité du gain accumulé, par ordre
+                d&apos;arrivée dans le panier.
               </p>
               <p>
                 En créant un compte, l&apos;Utilisateur reconnaît avoir lu, compris et accepté sans
@@ -64,9 +65,10 @@ export default function ConditionsUtilisationPage() {
               </p>
               <p>
                 Chaque Utilisateur ne peut détenir qu&apos;un seul compte. La création de comptes
-                multiples par une même personne, notamment dans le but de contourner les règles de
-                progression ou de parrainage, constitue une violation des présentes CGU pouvant
-                entraîner la suspension immédiate de l&apos;ensemble des comptes concernés.
+                multiples par une même personne, notamment dans le but d&apos;obtenir un ordre
+                d&apos;arrivée supplémentaire dans un même panier, constitue une violation des
+                présentes CGU pouvant entraîner la suspension immédiate de l&apos;ensemble des comptes
+                concernés.
               </p>
               <p>
                 L&apos;Utilisateur est seul responsable de la confidentialité de ses identifiants de
@@ -76,76 +78,68 @@ export default function ConditionsUtilisationPage() {
 
             <Section title="3. Fonctionnement du Service">
               <p>
-                L&apos;accès aux missions rémunérées est organisé en paliers progressifs. Chaque palier
-                nécessite un dépôt financier préalable, obligatoirement effectué depuis une source de
-                fonds externe au Service (jamais financé par le solde interne de l&apos;Utilisateur),
-                via le prestataire de paiement partenaire. Une fois le dépôt confirmé, l&apos;Utilisateur
-                accède à un nombre défini de missions rémunérées propres à ce palier.
+                Chaque panier propose un montant de cotisation et une fréquence fixes (par exemple
+                1 000 FCFA tous les 2 jours). Rejoindre un panier nécessite un premier dépôt du
+                montant de la formule, obligatoirement effectué via le prestataire de paiement
+                partenaire (jamais financé par un solde interne). Ce dépôt réserve la place de
+                l&apos;Utilisateur et détermine son ordre d&apos;arrivée dans le panier.
               </p>
               <p>
-                Les missions sont générées et corrigées automatiquement par le Service, sans
-                intervention humaine dans l&apos;évaluation des réponses. Une réponse incorrecte est
-                automatiquement rejetée et remplacée par une nouvelle mission, sans impact négatif
-                sur le solde de l&apos;Utilisateur.
+                Un panier compte 10 membres. Dès que la 10ᵉ place est occupée, les cotisations
+                démarrent le lendemain, à échéance régulière, jusqu&apos;à ce que le montant total du
+                round soit réuni. À l&apos;issue de ce round, l&apos;intégralité du gain accumulé est versée
+                au membre arrivé en premier dans le panier, qui quitte alors sa place. Une nouvelle
+                personne peut la combler, ce qui relance un nouveau round pour l&apos;ensemble des
+                membres restants et du nouvel arrivant, jusqu&apos;au tour du membre suivant par ordre
+                d&apos;arrivée.
               </p>
               <p>
-                Confssa se réserve le droit de faire évoluer à tout moment le contenu, le nombre, la
-                rémunération ou la nature des missions, ainsi que les montants et conditions des
-                paliers, sous réserve d&apos;en informer les Utilisateurs.
+                Toute cotisation non réglée le jour de son échéance entraîne le retrait automatique et
+                immédiat du membre concerné, sans remboursement des cotisations déjà versées pour le
+                round en cours, celles-ci ayant déjà servi à financer le gain d&apos;un membre précédent
+                ou étant redistribuées selon les règles du round.
+              </p>
+              <p>
+                Confssa se réserve le droit de faire évoluer à tout moment les montants, fréquences ou
+                conditions des paniers, sous réserve d&apos;en informer les Utilisateurs, et de créer ou
+                fermer des paniers selon la demande.
               </p>
             </Section>
 
-            <Section title="4. Parrainage">
+            <Section title="4. Paiements, cotisations et gains">
               <p>
-                Un Utilisateur peut parrainer d&apos;autres personnes au moyen d&apos;un code promotionnel
-                personnel et unique. Des commissions de parrainage peuvent être versées lorsque le
-                filleul atteint certains jalons de progression définis par le Service. Ces commissions
-                ne sont dues que dans les conditions précisément définies au sein du Service et
-                peuvent être révisées à tout moment pour l&apos;avenir.
+                Les cotisations sont traitées par l&apos;intermédiaire d&apos;un prestataire de paiement
+                tiers agréé. Confssa ne collecte ni ne conserve aucune donnée de carte bancaire ou de
+                compte de paiement : ces informations transitent exclusivement par l&apos;infrastructure
+                sécurisée du prestataire de paiement.
               </p>
               <p>
-                Toute tentative de fraude au système de parrainage (auto-parrainage, comptes
-                fictifs, incitation trompeuse) entraîne l&apos;annulation des commissions concernées et
-                peut donner lieu à la suspension du compte.
-              </p>
-            </Section>
-
-            <Section title="5. Paiements, dépôts et retraits">
-              <p>
-                Les dépôts et retraits sont traités par l&apos;intermédiaire d&apos;un prestataire de
-                paiement tiers agréé. Confssa ne collecte ni ne conserve aucune donnée de carte
-                bancaire ou de compte de paiement : ces informations transitent exclusivement par
-                l&apos;infrastructure sécurisée du prestataire de paiement.
+                Les gains sont versés manuellement par l&apos;équipe d&apos;administration vers le moyen de
+                paiement mobile money indiqué par le bénéficiaire (Orange Money, Wave, MTN Money ou
+                Moov Money), après validation de ses coordonnées. Confssa se réserve le droit
+                d&apos;ajuster les délais de versement, notamment en cas d&apos;indisponibilité temporaire
+                d&apos;un opérateur, sans que cela ne remette en cause les sommes dues, qui restent
+                acquises au bénéficiaire.
               </p>
               <p>
-                Les retraits sont soumis aux règles de déblocage en vigueur sur la plateforme
-                (droits de retrait associés à la progression, et/ou seuils d&apos;actif minimum), ainsi
-                qu&apos;à une validation manuelle par l&apos;équipe d&apos;administration avant tout envoi
-                effectif des fonds. Confssa se réserve le droit de suspendre temporairement les
-                retraits, en tout ou partie, notamment en cas d&apos;indisponibilité du prestataire de
-                paiement pour les opérations sortantes, sans que cela ne remette en cause les
-                sommes dues, qui restent acquises à l&apos;Utilisateur et exigibles dès le retour à la
-                normale.
-              </p>
-              <p>
-                Toute demande de retrait doit correspondre à des coordonnées de destination
-                (numéro de mobile money ou compte bancaire) appartenant réellement à
-                l&apos;Utilisateur titulaire du compte.
+                Toute demande de versement doit correspondre à des coordonnées de destination
+                (numéro de mobile money) appartenant réellement à l&apos;Utilisateur titulaire du compte
+                bénéficiaire.
               </p>
             </Section>
 
-            <Section title="6. Usage interdit">
+            <Section title="5. Usage interdit">
               <p>Il est strictement interdit d&apos;utiliser le Service pour :</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Fournir des informations d&apos;identité fausses ou usurpées ;</li>
-                <li>Automatiser la réalisation des missions par un script, un bot ou tout autre moyen technique non autorisé ;</li>
+                <li>Créer ou tenter de créer plusieurs comptes pour multiplier son ordre d&apos;arrivée dans un même panier ;</li>
                 <li>Contourner, exploiter ou tenter d&apos;exploiter une faille de sécurité ou un dysfonctionnement du Service ;</li>
                 <li>Blanchir des fonds ou utiliser le Service à des fins illégales ;</li>
                 <li>Revendre, céder ou partager l&apos;accès à son compte avec un tiers.</li>
               </ul>
             </Section>
 
-            <Section title="7. Suspension et résiliation">
+            <Section title="6. Suspension et résiliation">
               <p>
                 Confssa se réserve le droit de suspendre ou de résilier, à tout moment et sans
                 préavis, le compte d&apos;un Utilisateur en cas de violation des présentes CGU, de
@@ -154,7 +148,7 @@ export default function ConditionsUtilisationPage() {
               </p>
             </Section>
 
-            <Section title="8. Responsabilité">
+            <Section title="7. Responsabilité">
               <p>
                 Le Service est fourni « en l&apos;état ». Confssa met en œuvre des moyens raisonnables
                 pour assurer la disponibilité et la sécurité de la plateforme, sans garantir
@@ -165,7 +159,7 @@ export default function ConditionsUtilisationPage() {
               </p>
             </Section>
 
-            <Section title="9. Propriété intellectuelle">
+            <Section title="8. Propriété intellectuelle">
               <p>
                 L&apos;ensemble des éléments composant le Service (marque, logo, contenus, interface,
                 code source) est la propriété exclusive de Confssa ou de ses concédants et est
@@ -174,7 +168,7 @@ export default function ConditionsUtilisationPage() {
               </p>
             </Section>
 
-            <Section title="10. Modification des CGU">
+            <Section title="9. Modification des CGU">
               <p>
                 Confssa peut modifier les présentes CGU à tout moment. Les Utilisateurs seront
                 informés de toute modification substantielle. La poursuite de l&apos;utilisation du
@@ -182,7 +176,7 @@ export default function ConditionsUtilisationPage() {
               </p>
             </Section>
 
-            <Section title="11. Droit applicable et contact">
+            <Section title="10. Droit applicable et contact">
               <p>
                 Les présentes CGU sont régies par le droit ivoirien. Pour toute question relative à
                 ces CGU ou au Service, vous pouvez nous contacter à l&apos;adresse{" "}

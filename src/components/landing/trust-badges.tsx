@@ -1,29 +1,25 @@
-import { CreditCard, FileCheck2, ScrollText, Wallet } from "lucide-react";
+import { CreditCard, ScrollText, Timer, Users } from "lucide-react";
 
 const BADGES = [
   {
-    icon: Wallet,
-    title: "Dépôts toujours externes",
-    description:
-      "Chaque dépôt de palier provient obligatoirement d'un nouveau paiement. Vos gains ne financent jamais un dépôt.",
+    icon: Users,
+    title: "10 membres par panier",
+    description: "Une place = un ordre d'arrivée. Premier arrivé, premier payé, sans exception.",
   },
   {
-    icon: FileCheck2,
-    title: "Missions vérifiées",
-    description:
-      "Rédaction, vérification, classification, analyse : des tâches réelles, réalisables en quelques minutes.",
+    icon: Timer,
+    title: "Cotisations régulières",
+    description: "Un montant fixe, à date fixe, jusqu'à ce que ce soit votre tour de recevoir le gain complet.",
   },
   {
     icon: ScrollText,
     title: "Règles écrites noir sur blanc",
-    description:
-      "Montants, paliers, commissions et conditions de retrait sont annoncés avant toute action, sans exception.",
+    description: "Montants, échéances et ordre de passage sont annoncés avant même de rejoindre un panier.",
   },
   {
     icon: CreditCard,
-    title: "Paiements sécurisés",
-    description:
-      "Dépôts et retraits transitent par un agrégateur de paiement, avec traçabilité complète de chaque opération.",
+    title: "Cotisations sécurisées",
+    description: "Chaque cotisation transite par un agrégateur de paiement, avec traçabilité complète.",
   },
 ];
 

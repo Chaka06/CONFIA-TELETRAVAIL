@@ -10,8 +10,7 @@ export function SiteFooter() {
           <div>
             <Logo className="h-7" />
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Plateforme professionnelle de télétravail rémunéré : missions vérifiées, règles
-              transparentes, paiements sécurisés.
+              Tontine en ligne : paniers transparents, ordre de passage public, paiements sécurisés.
             </p>
           </div>
 
@@ -20,8 +19,7 @@ export function SiteFooter() {
               <p className="mb-3 font-medium text-foreground">Plateforme</p>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#comment-ca-marche" className="hover:text-foreground">Comment ça marche</a></li>
-                <li><a href="#missions" className="hover:text-foreground">Missions</a></li>
-                <li><a href="#parrainage" className="hover:text-foreground">Parrainage</a></li>
+                <li><Link href="/paniers" className="hover:text-foreground">Paniers</Link></li>
               </ul>
             </div>
             <div>
@@ -32,7 +30,7 @@ export function SiteFooter() {
               </ul>
             </div>
             <div>
-              <p className="mb-3 font-medium text-foreground">Confssance</p>
+              <p className="mb-3 font-medium text-foreground">Confiance</p>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#securite" className="hover:text-foreground">Sécurité</a></li>
                 <li>

@@ -12,8 +12,7 @@ import { Logo } from "@/components/logo";
 
 const NAV_LINKS = [
   { href: "#comment-ca-marche", label: "Comment ça marche" },
-  { href: "#missions", label: "Missions" },
-  { href: "#parrainage", label: "Parrainage" },
+  { href: "/paniers", label: "Paniers" },
   { href: "#securite", label: "Sécurité" },
 ];
 

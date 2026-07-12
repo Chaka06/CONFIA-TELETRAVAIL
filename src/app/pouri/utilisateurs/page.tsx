@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/require-admin";
-import { formatFcfa } from "@/lib/format";
 import { UserRowControls } from "@/components/admin/user-row-controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,7 @@ export default async function AdminUsersPage({
 
   let query = admin
     .from("profiles")
-    .select("id, first_name, last_name, email, role, status, created_at, wallets(balance)")
+    .select("id, first_name, last_name, email, role, status, created_at, tontine_memberships(status)")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -61,7 +60,7 @@ export default async function AdminUsersPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
-                  <TableHead>Actif</TableHead>
+                  <TableHead>Paniers actifs</TableHead>
                   <TableHead>Inscrit le</TableHead>
                   <TableHead className="text-right">Statut / Rôle</TableHead>
                 </TableRow>
@@ -73,7 +72,7 @@ export default async function AdminUsersPage({
                       {u.first_name} {u.last_name}
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </TableCell>
-                    <TableCell>{formatFcfa(u.wallets?.balance ?? 0)}</TableCell>
+                    <TableCell>{u.tontine_memberships.filter((m) => m.status === "active").length}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(u.created_at).toLocaleDateString("fr-FR")}
                     </TableCell>

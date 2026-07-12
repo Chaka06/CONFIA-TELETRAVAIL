@@ -9,7 +9,7 @@ const POINTS = [
   {
     icon: ScrollText,
     title: "Historique complet",
-    description: "Chaque dépôt, mission, retrait et commission est journalisé avec identifiant, statut et horodatage.",
+    description: "Chaque cotisation et chaque gain versé est journalisé avec identifiant, statut et horodatage.",
   },
   {
     icon: ShieldCheck,
@@ -19,7 +19,7 @@ const POINTS = [
   {
     icon: Sparkles,
     title: "Transparence des règles",
-    description: "Paliers, commissions et conditions de retrait sont publics et identiques pour tous les utilisateurs.",
+    description: "Montants, échéances et ordre de passage sont publics et identiques pour tous les membres.",
   },
 ];
 

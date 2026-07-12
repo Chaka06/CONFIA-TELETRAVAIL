@@ -6,22 +6,17 @@ import {
   geniusPayProvider,
 } from "@/lib/payments/genius-pay";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getServerEnv } from "@/lib/env";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import {
-  depositConfirmedEmail,
-  depositFailedEmail,
-  withdrawalApprovedEmail,
-  withdrawalRejectedEmail,
-} from "@/lib/email/templates";
+import { contributionConfirmedEmail, contributionFailedEmail, basketFullEmail } from "@/lib/email/templates";
+import { notifyBasketFull } from "@/lib/telegram";
+
+export const maxDuration = 30;
 
 /**
- * Webhook Genius Pay — seul point d'entrée qui peut faire passer un dépôt à
- * "confirmed" (donc créditer un portefeuille) ou finaliser un retrait.
- * Sécurité : signature HMAC vérifiée (avec fenêtre anti-rejeu de 5 minutes)
- * avant tout traitement, `service_role` utilisé uniquement après cette
- * vérification, idempotence garantie par les fonctions RPC elles-mêmes
- * (rejouer un événement ne double-crédite jamais un portefeuille).
+ * Webhook Genius Pay — seul point d'entrée qui peut confirmer une cotisation
+ * de tontine. Sécurité : signature HMAC vérifiée (fenêtre anti-rejeu de 5
+ * minutes) avant tout traitement ; idempotence garantie par les fonctions
+ * RPC elles-mêmes (rejouer un événement ne redémarre jamais un round deux fois).
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -42,166 +37,104 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const env = getServerEnv();
-  const dashboardUrl = `${env.APP_BASE_URL}/tableau-de-bord`;
 
   switch (event.type) {
-    case "deposit.confirmed": {
-      const { data: deposit } = await admin
-        .from("deposits")
-        .select("amount, user_id, cycle_tiers(tier_number)")
-        .eq("id", event.depositId)
+    case "contribution.confirmed": {
+      const { data: result, error } = await admin
+        .rpc("fn_confirm_contribution", {
+          p_contribution_id: event.contributionId,
+          p_provider_reference: event.providerReference,
+        })
         .single();
 
-      const { error } = await admin.rpc("confirm_deposit", {
-        p_deposit_id: event.depositId,
-        p_provider_reference: event.providerReference,
-        p_provider_payload: { event_id: event.providerEventId },
-      });
       if (error) {
-        console.error("confirm_deposit_rpc_failed", error);
+        console.error("fn_confirm_contribution_failed", error);
         return NextResponse.json({ error: "processing_failed" }, { status: 500 });
       }
 
-      if (deposit) {
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("email")
-          .eq("id", deposit.user_id)
-          .single();
+      const { data: contribution } = await admin
+        .from("tontine_contributions")
+        .select("amount, occurrence_number, membership_id, tontine_memberships(user_id, basket_instance_id)")
+        .eq("id", event.contributionId)
+        .single();
 
+      const userId = contribution?.tontine_memberships?.user_id;
+      if (userId) {
+        const { data: profile } = await admin.from("profiles").select("email, first_name").eq("id", userId).single();
         if (profile) {
           await sendTransactionalEmail({
-            userId: deposit.user_id,
+            userId,
             toEmail: profile.email,
-            templateKey: "deposit_confirmed",
-            template: depositConfirmedEmail({
-              amount: deposit.amount,
-              tierNumber: deposit.cycle_tiers?.tier_number ?? 0,
-              dashboardUrl,
-            }),
+            templateKey: "contribution_confirmed",
+            template: contributionConfirmedEmail({ amount: contribution!.amount }),
+          });
+        }
+      }
+
+      if (result?.should_start_round && result.basket_instance_id) {
+        const { data: members, error: startError } = await admin.rpc("fn_start_round", {
+          p_instance_id: result.basket_instance_id,
+        });
+
+        if (startError) {
+          console.error("fn_start_round_failed", startError);
+        } else if (members) {
+          const { data: instanceInfo } = await admin
+            .from("tontine_basket_instances")
+            .select("round_started_on, tontine_basket_types(label)")
+            .eq("id", result.basket_instance_id)
+            .single();
+
+          for (const member of members) {
+            await sendTransactionalEmail({
+              userId: member.user_id,
+              toEmail: member.email,
+              templateKey: "basket_full",
+              template: basketFullEmail({
+                basketLabel: instanceInfo?.tontine_basket_types?.label ?? "Panier",
+                roundStartedOn: instanceInfo?.round_started_on ?? "",
+              }),
+            });
+          }
+
+          await notifyBasketFull({
+            basketLabel: instanceInfo?.tontine_basket_types?.label ?? "Panier",
+            memberCount: members.length,
           });
         }
       }
       break;
     }
-    case "deposit.failed": {
-      const { data: deposit } = await admin
-        .from("deposits")
-        .select("amount, user_id")
-        .eq("id", event.depositId)
+    case "contribution.failed": {
+      const { data: contribution } = await admin
+        .from("tontine_contributions")
+        .select("amount, occurrence_number, membership_id, tontine_memberships(user_id)")
+        .eq("id", event.contributionId)
         .single();
 
-      const { error } = await admin.rpc("fail_deposit", {
-        p_deposit_id: event.depositId,
-        p_reason: event.reason,
-      });
-      if (error) {
-        console.error("fail_deposit_rpc_failed", error);
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      // Une échéance d'entrée (n°1) échouée annule l'adhésion : elle n'a
+      // encore rien coûté à personne d'autre. Une échéance ultérieure
+      // échouée reste "pending" — le membre peut réessayer avant le
+      // balayage quotidien qui le retirera s'il n'a toujours pas payé.
+      if (contribution?.occurrence_number === 1) {
+        await admin.rpc("fn_cancel_failed_join", { p_contribution_id: event.contributionId });
       }
 
-      if (deposit) {
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("email")
-          .eq("id", deposit.user_id)
-          .single();
-
+      const userId = contribution?.tontine_memberships?.user_id;
+      if (userId) {
+        const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).single();
         if (profile) {
           await sendTransactionalEmail({
-            userId: deposit.user_id,
+            userId,
             toEmail: profile.email,
-            templateKey: "deposit_failed",
-            template: depositFailedEmail({
-              amount: deposit.amount,
-              reason: event.reason,
-              retryUrl: `${dashboardUrl}/paliers`,
-            }),
-          });
-        }
-      }
-      break;
-    }
-    case "payout.completed": {
-      const { data: withdrawal } = await admin
-        .from("withdrawals")
-        .select("amount, user_id, status")
-        .eq("id", event.withdrawalId)
-        .single();
-
-      const { error } = await admin.rpc("finalize_withdrawal_payout", {
-        p_withdrawal_id: event.withdrawalId,
-        p_approved: true,
-        p_provider_reference: event.providerReference,
-      });
-      // Un webhook rejoué arrive une fois le retrait déjà "completed" : la
-      // RPC lève alors withdrawal_not_processing, ce qui est attendu (idempotence).
-      if (error && !error.message.includes("withdrawal_not_processing")) {
-        console.error("finalize_withdrawal_payout_rpc_failed", error);
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
-      }
-
-      if (withdrawal && withdrawal.status === "processing") {
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("email")
-          .eq("id", withdrawal.user_id)
-          .single();
-
-        if (profile) {
-          await sendTransactionalEmail({
-            userId: withdrawal.user_id,
-            toEmail: profile.email,
-            templateKey: "withdrawal_approved",
-            template: withdrawalApprovedEmail({ amount: withdrawal.amount }),
-          });
-        }
-      }
-      break;
-    }
-    case "payout.failed": {
-      const { data: withdrawal } = await admin
-        .from("withdrawals")
-        .select("amount, user_id, status")
-        .eq("id", event.withdrawalId)
-        .single();
-
-      const { error } = await admin.rpc("finalize_withdrawal_payout", {
-        p_withdrawal_id: event.withdrawalId,
-        p_approved: false,
-        p_reason: event.reason,
-      });
-      if (error && !error.message.includes("withdrawal_not_processing")) {
-        console.error("finalize_withdrawal_payout_rpc_failed", error);
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
-      }
-
-      if (withdrawal && withdrawal.status === "processing") {
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("email")
-          .eq("id", withdrawal.user_id)
-          .single();
-
-        if (profile) {
-          await sendTransactionalEmail({
-            userId: withdrawal.user_id,
-            toEmail: profile.email,
-            templateKey: "withdrawal_rejected",
-            template: withdrawalRejectedEmail({
-              amount: withdrawal.amount,
-              reason: event.reason,
-              dashboardUrl,
-            }),
+            templateKey: "contribution_failed",
+            template: contributionFailedEmail({ amount: contribution!.amount, reason: event.reason }),
           });
         }
       }
       break;
     }
     case "ignored":
-      // payment.initiated, payment.refunded, cashout.requested,
-      // cashout.approved, webhook.test — accusé de réception seulement.
       break;
   }
 
