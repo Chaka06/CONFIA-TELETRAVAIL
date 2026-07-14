@@ -25,17 +25,20 @@ export default async function PaniersPage() {
     .eq("is_active", true)
     .order("contribution_amount");
 
-  let openSpots: Record<string, number> = {};
+  // Nombre de membres inscrits sur le panier en cours de remplissage de chaque
+  // formule (celui que rejoindra un nouvel arrivant : le plus ancien 'filling').
+  // On n'affiche JAMAIS qui est en tête de file ni la position d'un membre :
+  // seulement le compteur membres/capacité tant que le panier n'est pas plein.
+  let filledCount: Record<string, number> = {};
   if (basketTypes) {
     const { data: instances } = await supabase
       .from("tontine_basket_instances")
-      .select("basket_type_id, member_count, status")
-      .in("status", ["filling", "paused"]);
+      .select("basket_type_id, member_count, created_at")
+      .eq("status", "filling")
+      .order("created_at", { ascending: true });
 
-    openSpots = (instances ?? []).reduce<Record<string, number>>((acc, i) => {
-      const basketType = basketTypes.find((bt) => bt.id === i.basket_type_id);
-      const capacity = basketType?.capacity ?? 10;
-      acc[i.basket_type_id] = (acc[i.basket_type_id] ?? 0) + (capacity - i.member_count);
+    filledCount = (instances ?? []).reduce<Record<string, number>>((acc, i) => {
+      if (!(i.basket_type_id in acc)) acc[i.basket_type_id] = i.member_count;
       return acc;
     }, {});
   }
@@ -48,7 +51,8 @@ export default async function PaniersPage() {
           <div className="mx-auto max-w-2xl text-center">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Choisissez votre panier</h1>
             <p className="mt-3 text-muted-foreground">
-              10 membres par panier, une place = un ordre d&apos;arrivée. Premier arrivé, premier payé.
+              20 membres par panier, un seul dépôt à l&apos;adhésion. Dès que le panier est complet, le premier
+              arrivé remporte la totalité.
             </p>
           </div>
 
@@ -58,7 +62,7 @@ export default async function PaniersPage() {
                 <CardHeader>
                   <CardTitle>{bt.label}</CardTitle>
                   <CardDescription>
-                    Cotisation tous les {bt.interval_days} jours, round de {bt.round_length_days} jours.
+                    Un dépôt unique de {formatFcfa(bt.contribution_amount)} à l&apos;adhésion.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -68,7 +72,7 @@ export default async function PaniersPage() {
                   </div>
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Users className="size-3.5" aria-hidden />
-                    {openSpots[bt.id] ?? bt.capacity} place(s) disponible(s)
+                    {filledCount[bt.id] ?? 0}/{bt.capacity ?? 20} membres
                   </p>
                   {user ? (
                     <JoinBasketButton basketTypeId={bt.id} amount={formatFcfa(bt.contribution_amount)} />

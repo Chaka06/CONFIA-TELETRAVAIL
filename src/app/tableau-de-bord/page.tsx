@@ -54,9 +54,9 @@ export default async function DashboardOverviewPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Paniers actifs" value={String(activeMemberships ?? 0)} icon={PiggyBank} accent="default" />
         <StatCard
-          label="Prochaine cotisation"
+          label="Dépôt à régler"
           value={nextDue ? formatFcfa(nextDue.amount) : "—"}
-          hint={nextDue ? new Date(nextDue.due_date).toLocaleDateString("fr-FR") : "Aucune échéance en attente"}
+          hint={nextDue ? "Dépôt d'entrée en attente" : "Aucun dépôt en attente"}
           icon={CalendarClock}
           accent="warning"
         />
@@ -72,7 +72,7 @@ export default async function DashboardOverviewPage() {
       <Card>
         <CardHeader>
           <CardTitle>Mes paniers</CardTitle>
-          <CardDescription>Suivez votre position dans la file d&apos;attente et vos échéances.</CardDescription>
+          <CardDescription>Suivez le remplissage de chaque panier que vous avez rejoint.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button render={<Link href="/tableau-de-bord/mes-paniers" />} nativeButton={false} className="gap-1.5">

@@ -21,7 +21,8 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-foreground">Comment fonctionne la tontine</h2>
           <p className="mt-3 text-muted-foreground">
-            Choisissez un panier, cotisez à date fixe avec 9 autres membres, et recevez le gain complet à votre tour.
+            Choisissez un panier, versez un dépôt unique, et dès que 20 membres l&apos;ont rejoint, le premier
+            arrivé remporte la totalité.
           </p>
         </div>
 
@@ -30,28 +31,29 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
             <span className="text-xs font-semibold text-primary">01</span>
             <h3 className="mt-1 text-sm font-semibold text-foreground">Vous rejoignez un panier</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Un dépôt du montant du panier réserve votre place et votre ordre d&apos;arrivée.
+              Un dépôt unique du montant du panier valide votre place, en un seul paiement.
             </p>
           </li>
           <li className="rounded-xl border border-border p-5">
             <span className="text-xs font-semibold text-primary">02</span>
             <h3 className="mt-1 text-sm font-semibold text-foreground">Le panier se remplit</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Dès que 10 membres ont rejoint, les cotisations démarrent le lendemain, à échéance fixe.
+              Vous suivez le nombre de membres inscrits en temps réel, jusqu&apos;à atteindre les 20 places.
             </p>
           </li>
           <li className="rounded-xl border border-border p-5">
             <span className="text-xs font-semibold text-primary">03</span>
-            <h3 className="mt-1 text-sm font-semibold text-foreground">Vous cotisez à chaque échéance</h3>
+            <h3 className="mt-1 text-sm font-semibold text-foreground">Le panier devient complet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Un rappel par e-mail à chaque date de dépôt. Un impayé libère automatiquement votre place.
+              Dès le 20ᵉ membre, le gagnant est désigné immédiatement : le premier arrivé dans le panier.
             </p>
           </li>
           <li className="rounded-xl border border-border p-5">
             <span className="text-xs font-semibold text-primary">04</span>
-            <h3 className="mt-1 text-sm font-semibold text-foreground">Vous recevez votre gain à votre tour</h3>
+            <h3 className="mt-1 text-sm font-semibold text-foreground">Le gagnant reçoit la totalité</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Premier arrivé, premier payé : le gain complet du round vous revient intégralement.
+              Il indique son moyen de paiement et reçoit le gain complet. Chacun peut rejoindre un nouveau panier
+              pour retenter.
             </p>
           </li>
         </ol>
@@ -61,11 +63,11 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
             <Card key={bt.id}>
               <CardHeader>
                 <CardTitle>{bt.label}</CardTitle>
-                <CardDescription>Tous les {bt.interval_days} jours, sur {bt.round_length_days ?? 0} jours.</CardDescription>
+                <CardDescription>Dépôt unique de {formatFcfa(bt.contribution_amount)}.</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-semibold text-primary">{formatFcfa(bt.payout_amount ?? 0)}</p>
-                <p className="text-xs text-muted-foreground">gain à terme</p>
+                <p className="text-xs text-muted-foreground">gain pour le gagnant</p>
               </CardContent>
             </Card>
           ))}

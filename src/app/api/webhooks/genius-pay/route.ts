@@ -6,9 +6,10 @@ import {
   geniusPayProvider,
 } from "@/lib/payments/genius-pay";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getServerEnv } from "@/lib/env";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import { contributionConfirmedEmail, contributionFailedEmail, basketFullEmail } from "@/lib/email/templates";
-import { notifyBasketFull } from "@/lib/telegram";
+import { contributionConfirmedEmail, contributionFailedEmail, payoutReadyEmail } from "@/lib/email/templates";
+import { notifyBasketMemberJoined, notifyPayoutReady } from "@/lib/telegram";
 
 export const maxDuration = 30;
 
@@ -16,7 +17,7 @@ export const maxDuration = 30;
  * Webhook Genius Pay — seul point d'entrée qui peut confirmer une cotisation
  * de tontine. Sécurité : signature HMAC vérifiée (fenêtre anti-rejeu de 5
  * minutes) avant tout traitement ; idempotence garantie par les fonctions
- * RPC elles-mêmes (rejouer un événement ne redémarre jamais un round deux fois).
+ * RPC elles-mêmes (rejouer un événement ne déclenche jamais deux fois un gain).
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -37,9 +38,14 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const env = getServerEnv();
 
   switch (event.type) {
     case "contribution.confirmed": {
+      // fn_confirm_contribution fait tout de façon synchrone : marque la
+      // cotisation payée, incrémente member_count, et si c'est le 20e paiement
+      // détermine le gagnant, crée le gain, clôt les autres membres et
+      // garantit une instance 'filling' neuve. Idempotent en cas de rejeu.
       const { data: result, error } = await admin
         .rpc("fn_confirm_contribution", {
           p_contribution_id: event.contributionId,
@@ -55,15 +61,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "processing_failed" }, { status: 500 });
       }
 
+      // Rejeu déjà traité (aucune instance renvoyée) : ne rien renotifier.
+      if (!result?.basket_instance_id) break;
+
       const { data: contribution } = await admin
         .from("tontine_contributions")
-        .select("amount, occurrence_number, membership_id, tontine_memberships(user_id, basket_instance_id)")
+        .select("amount, membership_id, tontine_memberships(user_id)")
         .eq("id", event.contributionId)
         .single();
 
       const userId = contribution?.tontine_memberships?.user_id;
       if (userId) {
-        const { data: profile } = await admin.from("profiles").select("email, first_name").eq("id", userId).single();
+        const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).single();
         if (profile) {
           await sendTransactionalEmail({
             userId,
@@ -74,37 +83,32 @@ export async function POST(request: Request) {
         }
       }
 
-      if (result?.should_start_round && result.basket_instance_id) {
-        const { data: members, error: startError } = await admin.rpc("fn_start_round", {
-          p_instance_id: result.basket_instance_id,
+      // À chaque adhésion payée : on annonce le nouveau compte dans le groupe.
+      await notifyBasketMemberJoined({
+        basketLabel: result.basket_label ?? "Panier",
+        memberCount: result.member_count ?? 0,
+        capacity: result.capacity ?? 0,
+      });
+
+      // 20e paiement : le panier est complet et le gagnant est déterminé au
+      // même instant. On prévient le gagnant (e-mail + Telegram).
+      if (result.became_full && result.winner_email && result.beneficiary_token) {
+        await sendTransactionalEmail({
+          userId: result.winner_user_id ?? null,
+          toEmail: result.winner_email,
+          templateKey: "payout_ready",
+          template: payoutReadyEmail({
+            basketLabel: result.basket_label ?? "Panier",
+            amount: result.payout_amount ?? 0,
+            claimUrl: `${env.APP_BASE_URL}/gain/${result.beneficiary_token}`,
+          }),
         });
 
-        if (startError) {
-          console.error("fn_start_round_failed", startError);
-        } else if (members) {
-          const { data: instanceInfo } = await admin
-            .from("tontine_basket_instances")
-            .select("round_started_on, tontine_basket_types(label)")
-            .eq("id", result.basket_instance_id)
-            .single();
-
-          for (const member of members) {
-            await sendTransactionalEmail({
-              userId: member.user_id,
-              toEmail: member.email,
-              templateKey: "basket_full",
-              template: basketFullEmail({
-                basketLabel: instanceInfo?.tontine_basket_types?.label ?? "Panier",
-                roundStartedOn: instanceInfo?.round_started_on ?? "",
-              }),
-            });
-          }
-
-          await notifyBasketFull({
-            basketLabel: instanceInfo?.tontine_basket_types?.label ?? "Panier",
-            memberCount: members.length,
-          });
-        }
+        await notifyPayoutReady({
+          basketLabel: result.basket_label ?? "Panier",
+          firstName: result.winner_first_name ?? "",
+          amount: result.payout_amount ?? 0,
+        });
       }
       break;
     }

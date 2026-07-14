@@ -16,13 +16,13 @@ export function Hero() {
             </span>
 
             <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-              Cotisez à plusieurs, soyez payé chacun votre tour.
+              Un dépôt, un panier plein, un gagnant.
             </h1>
 
             <p className="mt-5 text-balance text-lg leading-relaxed text-muted-foreground">
-              Confssa organise votre tontine en ligne : rejoignez un panier de 10 membres,
-              cotisez à date fixe, et recevez l&apos;intégralité du gain quand c&apos;est votre tour —
-              premier arrivé, premier payé.
+              Confssa organise votre tontine en ligne : rejoignez un panier de 20 membres avec un
+              dépôt unique. Dès que le panier est complet, le premier arrivé remporte l&apos;intégralité
+              du gain — premier arrivé, premier payé.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
@@ -36,7 +36,7 @@ export function Hero() {
             </div>
 
             <p className="mt-4 text-xs text-muted-foreground">
-              À partir de 1 000 FCFA tous les 2 jours. Aucun engagement caché.
+              À partir de 1 000 FCFA, un dépôt unique. Aucun engagement caché.
             </p>
           </div>
 

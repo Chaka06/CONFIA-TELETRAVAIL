@@ -43,58 +43,13 @@ export function contributionFailedEmail(params: { amount: number; reason: string
   };
 }
 
-export function contributionReminderEmail(params: {
-  amount: number;
-  basketLabel: string;
-  payUrl: string;
-}): EmailTemplate {
-  return {
-    subject: `Cotisation due aujourd'hui — ${params.basketLabel}`,
-    html: renderEmailLayout({
-      title: "Votre cotisation est due aujourd'hui",
-      paragraphs: [
-        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> pour le ${params.basketLabel} est due aujourd'hui.`,
-        "Cliquez sur le bouton ci-dessous pour payer en quelques secondes.",
-      ],
-      button: { label: "Payer ma cotisation", url: params.payUrl },
-      footnote: "Important : si le paiement n'est pas effectué aujourd'hui, votre place dans le panier sera automatiquement libérée demain.",
-    }),
-  };
-}
-
-export function basketFullEmail(params: { basketLabel: string; roundStartedOn: string }): EmailTemplate {
-  return {
-    subject: `${params.basketLabel} est complet !`,
-    html: renderEmailLayout({
-      title: "Votre panier est complet",
-      paragraphs: [
-        `Le <strong>${params.basketLabel}</strong> vient d'atteindre ses 10 membres.`,
-        `Vos cotisations démarrent le <strong>${params.roundStartedOn}</strong>. Vous recevrez un rappel par e-mail à chaque échéance.`,
-      ],
-    }),
-  };
-}
-
-export function memberRemovedEmail(params: { basketLabel: string }): EmailTemplate {
-  return {
-    subject: `Retrait du ${params.basketLabel}`,
-    html: renderEmailLayout({
-      title: "Vous avez été retiré du panier",
-      paragraphs: [
-        `Votre cotisation n'ayant pas été réglée à temps, vous avez été retiré du <strong>${params.basketLabel}</strong>.`,
-        "Vous pouvez rejoindre un autre panier (ou une nouvelle place dans le même) à tout moment depuis votre tableau de bord.",
-      ],
-    }),
-  };
-}
-
 export function payoutReadyEmail(params: { basketLabel: string; amount: number; claimUrl: string }): EmailTemplate {
   return {
     subject: `Félicitations, vous remportez le ${params.basketLabel} !`,
     html: renderEmailLayout({
       title: "Votre gain est prêt",
       paragraphs: [
-        `C'est votre tour : vous remportez <strong>${formatFcfa(params.amount)}</strong> sur le ${params.basketLabel}.`,
+        `Le ${params.basketLabel} est complet et vous êtes le premier arrivé : vous remportez <strong>${formatFcfa(params.amount)}</strong>.`,
         "Cliquez sur le bouton ci-dessous pour indiquer votre numéro et le moyen de paiement (Orange Money, Wave, MTN Money ou Moov Money) sur lequel vous souhaitez le recevoir.",
       ],
       button: { label: "Recevoir mon gain", url: params.claimUrl },

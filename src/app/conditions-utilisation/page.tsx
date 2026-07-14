@@ -48,9 +48,9 @@ export default async function ConditionsUtilisationPage() {
               <p>
                 Les présentes conditions générales d&apos;utilisation (« CGU ») régissent l&apos;accès et
                 l&apos;utilisation de la plateforme Confssa (le « Service »), qui organise des tontines
-                en ligne : des paniers de cotisation regroupant 10 membres, où chacun cotise à
-                échéance fixe et reçoit à son tour l&apos;intégralité du gain accumulé, par ordre
-                d&apos;arrivée dans le panier.
+                en ligne : des paniers regroupant 20 membres, où chacun verse un dépôt unique à
+                l&apos;adhésion et où, dès que le panier est complet, le premier membre arrivé remporte
+                l&apos;intégralité du gain.
               </p>
               <p>
                 En créant un compte, l&apos;Utilisateur reconnaît avoir lu, compris et accepté sans
@@ -84,26 +84,21 @@ export default async function ConditionsUtilisationPage() {
 
             <Section title="3. Fonctionnement du Service">
               <p>
-                Chaque panier propose un montant de cotisation et une fréquence fixes (par exemple
-                1 000 FCFA tous les 2 jours). Rejoindre un panier nécessite un premier dépôt du
-                montant de la formule, obligatoirement effectué via le prestataire de paiement
-                partenaire (jamais financé par un solde interne). Ce dépôt réserve la place de
-                l&apos;Utilisateur et détermine son ordre d&apos;arrivée dans le panier.
+                Chaque panier propose un montant de dépôt fixe (par exemple 1 000 FCFA). Rejoindre un
+                panier nécessite un dépôt unique du montant de la formule, obligatoirement effectué via
+                le prestataire de paiement partenaire (jamais financé par un solde interne). Ce dépôt,
+                versé une seule fois à l&apos;adhésion, valide la place de l&apos;Utilisateur dans le panier.
               </p>
               <p>
-                Un panier compte 10 membres. Dès que la 10ᵉ place est occupée, les cotisations
-                démarrent le lendemain, à échéance régulière, jusqu&apos;à ce que le montant total du
-                round soit réuni. À l&apos;issue de ce round, l&apos;intégralité du gain accumulé est versée
-                au membre arrivé en premier dans le panier, qui quitte alors sa place. Une nouvelle
-                personne peut la combler, ce qui relance un nouveau round pour l&apos;ensemble des
-                membres restants et du nouvel arrivant, jusqu&apos;au tour du membre suivant par ordre
-                d&apos;arrivée.
+                Un panier compte 20 membres. Dès que la 20ᵉ place est occupée et payée, le panier est
+                complet : l&apos;intégralité du gain est aussitôt attribuée au membre arrivé en premier
+                dans ce panier. Les autres membres ne remportent pas ce panier et peuvent rejoindre un
+                nouveau panier de la même formule pour retenter leur chance. Un panier complet est
+                définitivement clos ; il n&apos;est ni rejoué ni réutilisé.
               </p>
               <p>
-                Toute cotisation non réglée le jour de son échéance entraîne le retrait automatique et
-                immédiat du membre concerné, sans remboursement des cotisations déjà versées pour le
-                round en cours, celles-ci ayant déjà servi à financer le gain d&apos;un membre précédent
-                ou étant redistribuées selon les règles du round.
+                Un dépôt d&apos;entrée réservé mais non réglé dans un délai de 24 heures est
+                automatiquement annulé et la réservation libérée, sans conséquence pour l&apos;Utilisateur.
               </p>
               <p>
                 Confssa se réserve le droit de faire évoluer à tout moment les montants, fréquences ou

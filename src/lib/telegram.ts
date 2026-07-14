@@ -42,15 +42,18 @@ async function sendTelegramMessage(text: string): Promise<void> {
   }
 }
 
-export async function notifyBasketFull(params: { basketLabel: string; memberCount: number }) {
+/**
+ * À chaque nouvelle adhésion payée (confirmation d'un dépôt d'entrée), y
+ * compris avant que le panier soit plein : annonce le nouveau compte de
+ * membres pour la formule concernée.
+ */
+export async function notifyBasketMemberJoined(params: {
+  basketLabel: string;
+  memberCount: number;
+  capacity: number;
+}) {
   await sendTelegramMessage(
-    `✅ <b>${escapeTelegramHtml(params.basketLabel)}</b> est complet (${params.memberCount} membres). Les cotisations démarrent demain.`
-  );
-}
-
-export async function notifyMemberRemoved(params: { basketLabel: string; firstName: string; joinUrl: string }) {
-  await sendTelegramMessage(
-    `⚠️ Un membre (${escapeTelegramHtml(params.firstName)}) a été retiré du <b>${escapeTelegramHtml(params.basketLabel)}</b> pour non-paiement.\nUne place est libre : ${params.joinUrl}`
+    `👤 <b>${escapeTelegramHtml(params.basketLabel)}</b> : ${params.memberCount}/${params.capacity} membres.`
   );
 }
 
@@ -61,12 +64,18 @@ export async function notifyPayoutConfirmed(params: {
   joinUrl: string;
 }) {
   await sendTelegramMessage(
-    `💰 ${escapeTelegramHtml(params.firstName)} a été payé(e) : ${formatFcfa(params.amount)} sur le <b>${escapeTelegramHtml(params.basketLabel)}</b>.\nUne place vient de se libérer : ${params.joinUrl}`
+    `💰 ${escapeTelegramHtml(params.firstName)} a été payé(e) : ${formatFcfa(params.amount)} sur le <b>${escapeTelegramHtml(params.basketLabel)}</b>.\nUne nouvelle place est ouverte pour retenter sa chance : ${params.joinUrl}`
   );
 }
 
+/**
+ * Panier plein : dans le nouveau modèle, "complet" et "gagnant déterminé"
+ * sont le même instant, donc cette notification annonce directement le
+ * gagnant et le montant à verser (l'ancien notifyBasketFull a été fusionné
+ * ici : il n'a plus de raison d'exister séparément).
+ */
 export async function notifyPayoutReady(params: { basketLabel: string; firstName: string; amount: number }) {
   await sendTelegramMessage(
-    `🎉 ${escapeTelegramHtml(params.firstName)} remporte le <b>${escapeTelegramHtml(params.basketLabel)}</b> : ${formatFcfa(params.amount)} à verser.`
+    `🎉 <b>${escapeTelegramHtml(params.basketLabel)}</b> est complet ! ${escapeTelegramHtml(params.firstName)} remporte ${formatFcfa(params.amount)} à verser.`
   );
 }

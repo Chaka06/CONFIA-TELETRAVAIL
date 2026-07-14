@@ -58,8 +58,8 @@ export default async function AdminSettingsPage() {
             <div key={bt.id} className="flex justify-between border-b border-border py-2 text-sm last:border-0">
               <span className="font-medium">{bt.label}</span>
               <span className="text-muted-foreground">
-                Cotisation {formatFcfa(bt.contribution_amount)} / {bt.interval_days} j · round de{" "}
-                {bt.round_length_days} j · gain {formatFcfa(bt.payout_amount ?? 0)}
+                Dépôt {formatFcfa(bt.contribution_amount)} · {bt.capacity} places · gain{" "}
+                {formatFcfa(bt.payout_amount ?? 0)}
               </span>
             </div>
           ))}

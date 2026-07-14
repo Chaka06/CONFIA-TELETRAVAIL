@@ -19,7 +19,7 @@ const POINTS = [
   {
     icon: Sparkles,
     title: "Transparence des règles",
-    description: "Montants, échéances et ordre de passage sont publics et identiques pour tous les membres.",
+    description: "Montant, capacité et gain sont publics et identiques pour les 4 formules, avant même de rejoindre.",
   },
 ];
 

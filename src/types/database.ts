@@ -613,18 +613,19 @@ export type Database = {
         }
         Returns: {
           basket_instance_id: string
-          should_start_round: boolean
+          basket_label: string
+          became_full: boolean
+          beneficiary_token: string
+          capacity: number
+          member_count: number
+          payout_amount: number
+          payout_id: string
+          winner_email: string
+          winner_first_name: string
+          winner_user_id: string
         }[]
       }
       fn_daily_tontine_sweep: { Args: never; Returns: Json }
-      fn_start_round: {
-        Args: { p_instance_id: string }
-        Returns: {
-          email: string
-          first_name: string
-          user_id: string
-        }[]
-      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       join_basket: {
@@ -644,9 +645,13 @@ export type Database = {
     Enums: {
       account_status: "active" | "suspended" | "banned"
       app_role: "user" | "admin" | "super_admin"
-      basket_instance_status: "filling" | "active" | "paused"
+      basket_instance_status: "filling" | "active" | "paused" | "completed"
       contribution_status: "pending" | "paid" | "missed"
-      membership_status: "active" | "removed_missed_payment" | "paid_out_left"
+      membership_status:
+        | "active"
+        | "removed_missed_payment"
+        | "paid_out_left"
+        | "cycle_completed"
       notification_type:
         | "basket_joined"
         | "basket_full"
@@ -798,9 +803,14 @@ export const Constants = {
     Enums: {
       account_status: ["active", "suspended", "banned"],
       app_role: ["user", "admin", "super_admin"],
-      basket_instance_status: ["filling", "active", "paused"],
+      basket_instance_status: ["filling", "active", "paused", "completed"],
       contribution_status: ["pending", "paid", "missed"],
-      membership_status: ["active", "removed_missed_payment", "paid_out_left"],
+      membership_status: [
+        "active",
+        "removed_missed_payment",
+        "paid_out_left",
+        "cycle_completed",
+      ],
       notification_type: [
         "basket_joined",
         "basket_full",

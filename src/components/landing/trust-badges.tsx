@@ -3,23 +3,23 @@ import { CreditCard, ScrollText, Timer, Users } from "lucide-react";
 const BADGES = [
   {
     icon: Users,
-    title: "10 membres par panier",
-    description: "Une place = un ordre d'arrivée. Premier arrivé, premier payé, sans exception.",
+    title: "20 membres par panier",
+    description: "Un seul dépôt à l'adhésion. Dès que le panier est complet, le premier arrivé remporte tout.",
   },
   {
     icon: Timer,
-    title: "Cotisations régulières",
-    description: "Un montant fixe, à date fixe, jusqu'à ce que ce soit votre tour de recevoir le gain complet.",
+    title: "Un paiement unique",
+    description: "Pas de cotisations à répétition : vous versez une seule fois, à l'adhésion, puis vous suivez le remplissage.",
   },
   {
     icon: ScrollText,
     title: "Règles écrites noir sur blanc",
-    description: "Montants, échéances et ordre de passage sont annoncés avant même de rejoindre un panier.",
+    description: "Montant, capacité et gain sont annoncés avant même de rejoindre un panier.",
   },
   {
     icon: CreditCard,
-    title: "Cotisations sécurisées",
-    description: "Chaque cotisation transite par un agrégateur de paiement, avec traçabilité complète.",
+    title: "Paiements sécurisés",
+    description: "Chaque dépôt transite par un agrégateur de paiement, avec traçabilité complète.",
   },
 ];
 

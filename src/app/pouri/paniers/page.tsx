@@ -13,7 +13,8 @@ import {
 
 const STATUS_LABEL: Record<string, { label: string; className: string }> = {
   filling: { label: "Remplissage", className: "bg-warning/10 text-warning" },
-  active: { label: "Actif", className: "bg-success/10 text-success" },
+  active: { label: "Complet — gain à confirmer", className: "bg-success/10 text-success" },
+  completed: { label: "Clôturé (gain versé)", className: "bg-primary/10 text-primary" },
   paused: { label: "En pause (place libre)", className: "bg-destructive/10 text-destructive" },
 };
 
@@ -23,7 +24,7 @@ export default async function AdminPaniersPage() {
 
   const { data: instances } = await admin
     .from("tontine_basket_instances")
-    .select("id, status, member_count, round_number, round_started_on, created_at, tontine_basket_types(label, capacity)")
+    .select("id, status, member_count, created_at, filled_at, tontine_basket_types(label, capacity)")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -42,8 +43,8 @@ export default async function AdminPaniersPage() {
                 <TableRow>
                   <TableHead>Formule</TableHead>
                   <TableHead>Membres</TableHead>
-                  <TableHead>Round</TableHead>
-                  <TableHead>Démarré le</TableHead>
+                  <TableHead>Créé le</TableHead>
+                  <TableHead>Complété le</TableHead>
                   <TableHead className="text-right">Statut</TableHead>
                 </TableRow>
               </TableHeader>
@@ -56,9 +57,11 @@ export default async function AdminPaniersPage() {
                       <TableCell>
                         {i.member_count} / {i.tontine_basket_types?.capacity}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">n°{i.round_number}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {i.round_started_on ? new Date(i.round_started_on).toLocaleDateString("fr-FR") : "—"}
+                        {new Date(i.created_at).toLocaleDateString("fr-FR")}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {i.filled_at ? new Date(i.filled_at).toLocaleDateString("fr-FR") : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge className={statusInfo.className}>{statusInfo.label}</Badge>

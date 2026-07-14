@@ -10,7 +10,7 @@ const bodySchema = z.object({
 });
 
 /**
- * Point d'entrée public (sans connexion) permettant au gagnant d'un round de
+ * Point d'entrée public (sans connexion) permettant au gagnant d'un panier de
  * renseigner ses coordonnées de paiement via le lien unique reçu par e-mail.
  * Utilise le client anonyme : la RPC `submit_payout_beneficiary_info` est
  * volontairement la seule surface accordée à `anon` sur cette table.

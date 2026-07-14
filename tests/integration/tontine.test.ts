@@ -1,16 +1,15 @@
 /**
- * Test d'intégration du moteur de tontine, exécuté contre la stack Supabase
- * LOCALE (`npx supabase start` doit être lancé au préalable). Reproduit
- * noir sur blanc les règles métier :
- *   - rejoindre un panier crée une adhésion + une cotisation d'entrée due,
- *   - dès que le 10e membre paie son entrée, le round démarre : les
- *     échéances 2 à 5 sont générées pour tous, espacées de interval_days,
- *   - une échéance non payée le lendemain de sa date due retire
- *     automatiquement le membre concerné,
- *   - la dernière échéance du round déclenche le gain du premier membre par
- *     ordre d'arrivée, pour le montant exact attendu,
+ * Test d'intégration du moteur de tontine (nouveau modèle), exécuté contre la
+ * stack Supabase LOCALE (`npx supabase start` au préalable). Règles métier :
+ *   - rejoindre un panier crée une adhésion + un dépôt d'entrée unique dû,
+ *   - `member_count` n'est incrémenté qu'à la confirmation réelle du paiement,
+ *   - dès que le 20e membre paie, TOUT se déclenche de façon synchrone dans
+ *     `fn_confirm_contribution` : gagnant déterminé (join_order minimal), gain
+ *     créé, les 19 autres passent en `cycle_completed`, l'instance passe en
+ *     `active`, et une instance `filling` neuve est disponible,
  *   - le gagnant renseigne ses coordonnées via son jeton, l'admin confirme,
- *     le membre quitte le panier et une place se libère.
+ *     le membre passe `paid_out_left` et l'instance est close (`completed`),
+ *   - pas de round 2, pas de cotisations étalées, pas de rappel d'échéance.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -18,7 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 try {
   process.loadEnvFile(new URL("../../.env.local", import.meta.url));
 } catch {
-  // .env.local absent : on retombe sur les valeurs par défaut de la stack locale ci-dessous.
+  // .env.local absent : valeurs par défaut de la stack locale ci-dessous.
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -30,6 +29,7 @@ const SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
 const PASSWORD = "TestPassword123";
+const CAPACITY = 20;
 
 function uniqueEmail(label: string) {
   return `${label}.${Date.now()}.${Math.floor(Math.random() * 1e6)}@example.com`;
@@ -46,7 +46,7 @@ async function createConfirmedUser(admin: SupabaseClient, label: string, phoneSu
       last_name: label,
       date_of_birth: "1995-01-01",
       city: "Abidjan",
-      phone_number: `+225070000${phoneSuffix}`,
+      phone_number: `+22507${phoneSuffix.padStart(7, "0")}`,
     },
   });
   if (error || !data.user) throw new Error(`Création utilisateur ${label} échouée : ${error?.message}`);
@@ -60,7 +60,7 @@ async function signIn(email: string) {
   return client;
 }
 
-describe("Tontine — remplissage d'un panier et démarrage de round", () => {
+describe("Tontine — 20 paiements remplissent le panier et déclenchent le gain instantanément", () => {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -68,6 +68,7 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
   const users: { id: string; email: string }[] = [];
   let basketTypeId: string;
   let instanceId: string;
+  let firstMembershipId: string;
 
   beforeAll(async () => {
     const { data: basketType } = await admin
@@ -77,23 +78,19 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
       .single();
     basketTypeId = basketType!.id;
 
-    for (let i = 0; i < 10; i++) {
-      const user = await createConfirmedUser(admin, `member${i}`, String(500 + i));
-      users.push(user);
+    for (let i = 0; i < CAPACITY; i++) {
+      users.push(await createConfirmedUser(admin, `member${i}`, String(1000 + i)));
     }
-  }, 60000);
+  }, 120000);
 
   afterAll(async () => {
-    for (const user of users) {
-      await admin.auth.admin.deleteUser(user.id);
-    }
-    // Nettoie l'instance créée par ce bloc et celle auto-créée par
-    // fn_start_round ("filling" toujours disponible) — sinon elles
-    // polluent un run suivant sans reset DB (member_count déjà à 10).
+    for (const user of users) await admin.auth.admin.deleteUser(user.id);
+    // Nettoie l'instance remplie par ce bloc et l'instance 'filling' neuve
+    // auto-créée à la clôture, pour que le run suivant reparte propre.
     await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
   });
 
-  it("10 membres rejoignant et payant leur entrée remplissent le panier et démarrent le round", async () => {
+  it("le 20e paiement crée le gain, clôt les 19 autres et ouvre un panier neuf", async () => {
     for (const [index, user] of users.entries()) {
       const client = await signIn(user.email);
       const { data: joinResult, error: joinError } = await client
@@ -102,9 +99,12 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
 
       expect(joinError).toBeNull();
       expect(joinResult).not.toBeNull();
-      if (index === 0) instanceId = joinResult!.basket_instance_id;
+      if (index === 0) {
+        instanceId = joinResult!.basket_instance_id;
+        firstMembershipId = joinResult!.membership_id;
+      }
 
-      const { data: confirmResult, error: confirmError } = await admin
+      const { data: confirm, error: confirmError } = await admin
         .rpc("fn_confirm_contribution", {
           p_contribution_id: joinResult!.contribution_id,
           p_provider_reference: `MTX-TEST-${index}`,
@@ -113,177 +113,82 @@ describe("Tontine — remplissage d'un panier et démarrage de round", () => {
         .single();
 
       expect(confirmError).toBeNull();
+      expect(confirm!.basket_instance_id).toBe(instanceId);
+      expect(confirm!.member_count).toBe(index + 1);
+      expect(confirm!.capacity).toBe(CAPACITY);
 
-      if (index < 9) {
-        expect(confirmResult?.should_start_round).toBe(false);
+      if (index < CAPACITY - 1) {
+        expect(confirm!.became_full).toBe(false);
       } else {
-        expect(confirmResult?.should_start_round).toBe(true);
-        expect(confirmResult?.basket_instance_id).toBe(instanceId);
+        // 20e paiement : gain déclenché immédiatement, gagnant = 1er arrivé.
+        expect(confirm!.became_full).toBe(true);
+        expect(confirm!.winner_user_id).toBe(users[0].id);
+        expect(Number(confirm!.payout_amount)).toBe(20000);
+        expect(confirm!.beneficiary_token).toBeTruthy();
       }
     }
 
+    // L'instance est pleine et en attente de confirmation admin.
     const { data: instance } = await admin
       .from("tontine_basket_instances")
-      .select("status, member_count, round_started_on")
+      .select("status, member_count")
       .eq("id", instanceId)
       .single();
-    expect(instance?.status).toBe("filling");
-    expect(instance?.member_count).toBe(10);
+    expect(instance?.status).toBe("active");
+    expect(instance?.member_count).toBe(CAPACITY);
 
-    // Le démarrage du round est déclenché explicitement par l'appelant
-    // (webhook) une fois should_start_round=true — on le fait ici comme le
-    // ferait la route webhook.
-    const { data: members, error: startError } = await admin.rpc("fn_start_round", { p_instance_id: instanceId });
-    expect(startError).toBeNull();
-    expect(members).toHaveLength(10);
+    // Le gagnant (1er arrivé) reste actif ; les 19 autres sont clôturés.
+    const { data: memberships } = await admin
+      .from("tontine_memberships")
+      .select("id, status, join_order")
+      .eq("basket_instance_id", instanceId)
+      .order("join_order");
+    expect(memberships).toHaveLength(CAPACITY);
+    expect(memberships!.filter((m) => m.status === "active")).toHaveLength(1);
+    expect(memberships!.find((m) => m.status === "active")!.id).toBe(firstMembershipId);
+    expect(memberships!.filter((m) => m.status === "cycle_completed")).toHaveLength(CAPACITY - 1);
 
-    const { data: activeInstance } = await admin
-      .from("tontine_basket_instances")
-      .select("status, round_started_on")
-      .eq("id", instanceId)
-      .single();
-    expect(activeInstance?.status).toBe("active");
-    expect(activeInstance?.round_started_on).not.toBeNull();
+    // Exactement une ligne de gain, pour le 1er arrivé, montant exact, pending.
+    const { data: payouts } = await admin
+      .from("tontine_payouts")
+      .select("membership_id, amount, status")
+      .eq("basket_instance_id", instanceId);
+    expect(payouts).toHaveLength(1);
+    expect(payouts![0].membership_id).toBe(firstMembershipId);
+    expect(Number(payouts![0].amount)).toBe(20000);
+    expect(payouts![0].status).toBe("pending");
 
+    // Un dépôt d'entrée unique par membre, tous payés (pas de cotisation étalée).
+    const membershipIds = memberships!.map((m) => m.id);
     const { data: contributions } = await admin
       .from("tontine_contributions")
-      .select("occurrence_number, status, membership_id")
-      .in(
-        "membership_id",
-        (await admin.from("tontine_memberships").select("id").eq("basket_instance_id", instanceId)).data!.map(
-          (m) => m.id
-        )
-      );
+      .select("occurrence_number, status")
+      .in("membership_id", membershipIds);
+    expect(contributions).toHaveLength(CAPACITY);
+    expect(contributions!.every((c) => c.occurrence_number === 1 && c.status === "paid")).toBe(true);
 
-    // 10 membres x 5 occurrences (1 payée à l'entrée + 4 générées au démarrage du round).
-    expect(contributions).toHaveLength(50);
-    expect(contributions!.filter((c) => c.occurrence_number === 1 && c.status === "paid")).toHaveLength(10);
-    expect(contributions!.filter((c) => c.occurrence_number > 1 && c.status === "pending")).toHaveLength(40);
-
-    // Un nouveau panier "filling" doit être disponible pour les prochains arrivants.
-    const { data: newFillingInstance } = await admin
+    // Une instance 'filling' neuve est disponible pour les prochains arrivants.
+    const { data: filling } = await admin
       .from("tontine_basket_instances")
-      .select("id")
+      .select("id, member_count")
       .eq("basket_type_id", basketTypeId)
       .eq("status", "filling")
       .maybeSingle();
-    expect(newFillingInstance).not.toBeNull();
-  }, 60000);
-});
+    expect(filling).not.toBeNull();
+    expect(filling!.member_count).toBe(0);
+  }, 120000);
 
-describe("Tontine — impayé, retrait automatique et déclenchement du gain", () => {
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  let basketTypeId: string;
-  let instanceId: string;
-  const memberships: { id: string; userId: string; email: string }[] = [];
-
-  beforeAll(async () => {
-    const { data: basketType } = await admin
-      .from("tontine_basket_types")
-      .select("id, contribution_amount, contributions_per_round")
-      .eq("contribution_amount", 1000)
-      .single();
-    basketTypeId = basketType!.id;
-
-    const { data: instance } = await admin
-      .from("tontine_basket_instances")
-      .insert({ basket_type_id: basketTypeId, status: "filling" })
-      .select("id")
-      .single();
-    instanceId = instance!.id;
-
-    for (let i = 0; i < 10; i++) {
-      const user = await createConfirmedUser(admin, `sweep${i}`, String(600 + i));
-      const { data: membership } = await admin
-        .from("tontine_memberships")
-        .insert({ basket_instance_id: instanceId, user_id: user.id, join_order: i + 1, status: "active" })
-        .select("id")
-        .single();
-      memberships.push({ id: membership!.id, userId: user.id, email: user.email });
-    }
-
-    await admin.from("tontine_basket_instances").update({ member_count: 10 }).eq("id", instanceId);
-    await admin.rpc("fn_start_round", { p_instance_id: instanceId });
-  }, 60000);
-
-  afterAll(async () => {
-    for (const m of memberships) {
-      await admin.auth.admin.deleteUser(m.userId);
-    }
-    // Idem : nettoie l'instance créée directement par ce bloc et celle
-    // auto-créée par fn_start_round, pour que le type de panier partagé
-    // reparte propre au run suivant.
-    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
-  });
-
-  it("retire automatiquement un membre n'ayant pas payé l'échéance de la veille", async () => {
-    // Force l'échéance n°2 du premier membre à hier, pour simuler un impayé.
-    const { data: contribution } = await admin
-      .from("tontine_contributions")
-      .select("id")
-      .eq("membership_id", memberships[0].id)
-      .eq("occurrence_number", 2)
-      .single();
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    await admin
-      .from("tontine_contributions")
-      .update({ due_date: yesterday.toISOString().slice(0, 10) })
-      .eq("id", contribution!.id);
-
-    const { data: sweepResult, error } = await admin.rpc("fn_daily_tontine_sweep");
-    expect(error).toBeNull();
-    expect((sweepResult as { removed: unknown[] }).removed.length).toBeGreaterThanOrEqual(1);
-
-    const { data: membershipAfter } = await admin
-      .from("tontine_memberships")
-      .select("status")
-      .eq("id", memberships[0].id)
-      .single();
-    expect(membershipAfter?.status).toBe("removed_missed_payment");
-
-    const { data: instanceAfter } = await admin
-      .from("tontine_basket_instances")
-      .select("member_count, status")
-      .eq("id", instanceId)
-      .single();
-    expect(instanceAfter?.member_count).toBe(9);
-    expect(instanceAfter?.status).toBe("paused");
-  });
-
-  it("déclenche le gain du premier membre restant quand la dernière échéance arrive, puis l'admin confirme le versement", async () => {
-    // Force toutes les dernières échéances (occurrence 5) restantes à aujourd'hui.
-    const remainingMembershipIds = memberships.slice(1).map((m) => m.id);
-    await admin
-      .from("tontine_contributions")
-      .update({ due_date: new Date().toISOString().slice(0, 10) })
-      .in("membership_id", remainingMembershipIds)
-      .eq("occurrence_number", 5);
-
-    const { data: sweepResult, error } = await admin.rpc("fn_daily_tontine_sweep");
-    expect(error).toBeNull();
-    const payouts = (sweepResult as { payouts: { payout_id: string; amount: number; membership_id: string }[] })
-      .payouts;
-    expect(payouts).toHaveLength(1);
-    expect(payouts[0].amount).toBe(50000);
-    // Le membre[0] a été retiré au test précédent : le gagnant doit être membre[1] (2e arrivé).
-    expect(payouts[0].membership_id).toBe(memberships[1].id);
-
+  it("le gagnant réclame son gain et l'admin confirme : membre sorti, instance close", async () => {
     const { data: payout } = await admin
       .from("tontine_payouts")
-      .select("beneficiary_token, status")
-      .eq("id", payouts[0].payout_id)
+      .select("id, beneficiary_token")
+      .eq("basket_instance_id", instanceId)
       .single();
-    expect(payout?.status).toBe("pending");
 
     const anon = createClient(SUPABASE_URL, ANON_KEY);
     const { error: claimError } = await anon.rpc("submit_payout_beneficiary_info", {
       p_token: payout!.beneficiary_token,
-      p_phone: "+2250700000601",
+      p_phone: "+2250700001000",
       p_payment_method: "orange_money",
     });
     expect(claimError).toBeNull();
@@ -293,29 +198,29 @@ describe("Tontine — impayé, retrait automatique et déclenchement du gain", (
       .select("id")
       .eq("email", "admin@confia.local")
       .maybeSingle();
-    const adminId = adminProfile?.id ?? memberships[0].userId;
+    const adminId = adminProfile?.id ?? users[0].id;
 
     const { data: confirmResult, error: confirmError } = await admin
-      .rpc("admin_confirm_payout", { p_payout_id: payouts[0].payout_id, p_processed_by: adminId })
+      .rpc("admin_confirm_payout", { p_payout_id: payout!.id, p_processed_by: adminId })
       .single();
     expect(confirmError).toBeNull();
     expect(confirmResult?.basket_instance_id).toBe(instanceId);
 
-    const { data: winnerMembership } = await admin
+    const { data: winner } = await admin
       .from("tontine_memberships")
       .select("status")
-      .eq("id", memberships[1].id)
+      .eq("id", firstMembershipId)
       .single();
-    expect(winnerMembership?.status).toBe("paid_out_left");
+    expect(winner?.status).toBe("paid_out_left");
 
     const { data: instanceAfter } = await admin
       .from("tontine_basket_instances")
-      .select("member_count, status")
+      .select("status")
       .eq("id", instanceId)
       .single();
-    expect(instanceAfter?.member_count).toBe(8);
-    expect(instanceAfter?.status).toBe("paused");
-  });
+    // Instance définitivement close : pas de round 2, pas de réouverture.
+    expect(instanceAfter?.status).toBe("completed");
+  }, 60000);
 });
 
 describe("Tontine — sécurité : une adhésion non payée ne compte jamais comme une place réelle", () => {
@@ -327,9 +232,6 @@ describe("Tontine — sécurité : une adhésion non payée ne compte jamais com
   let user: { id: string; email: string };
 
   beforeAll(async () => {
-    // Formule dédiée à cette suite (montant volontairement distinct des
-    // formules seedées, pour ne jamais rendre `.single()` ambigu ailleurs),
-    // et pour ne dépendre d'aucune instance partagée laissée par d'autres tests.
     const { data: basketType } = await admin
       .from("tontine_basket_types")
       .insert({ label: "Test isolation sécurité", contribution_amount: 1234, interval_days: 2 })
@@ -341,12 +243,11 @@ describe("Tontine — sécurité : une adhésion non payée ne compte jamais com
 
   afterAll(async () => {
     await admin.auth.admin.deleteUser(user.id);
+    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
     await admin.from("tontine_basket_types").delete().eq("id", basketTypeId);
   });
 
   it("join_basket seul (sans confirmation de paiement) n'incrémente pas member_count", async () => {
-    // Instance dédiée et vide, pour ne dépendre d'aucun autre test partageant
-    // le même basket_type_id.
     const { data: freshInstance } = await admin
       .from("tontine_basket_instances")
       .insert({ basket_type_id: basketTypeId, status: "filling" })
@@ -367,11 +268,8 @@ describe("Tontine — sécurité : une adhésion non payée ne compte jamais com
       .eq("id", joinResult!.basket_instance_id)
       .single();
 
-    // La réservation existe (la ligne membership est créée), mais tant que
-    // le paiement n'est pas confirmé, elle ne doit JAMAIS compter comme une
-    // place occupée pour de vrai — sinon un panier pourrait être déclaré
-    // "complet" et démarrer un round sans que tout le monde ait payé.
-    expect(instanceAfter?.member_count).toBe(freshInstance!.member_count);
+    // Tant que le paiement n'est pas confirmé, la réservation ne doit JAMAIS
+    // compter comme une place occupée pour de vrai.
     expect(instanceAfter?.member_count).toBe(0);
   });
 
@@ -383,7 +281,7 @@ describe("Tontine — sécurité : une adhésion non payée ne compte jamais com
     const { error } = await admin.rpc("fn_confirm_contribution", {
       p_contribution_id: joinResult!.contribution_id,
       p_provider_reference: "MTX-TEST-MISMATCH",
-      p_paid_amount: 1, // montant frauduleux, très inférieur aux 1000 FCFA attendus
+      p_paid_amount: 1, // montant frauduleux, très inférieur aux 1234 FCFA attendus
     });
 
     expect(error).not.toBeNull();
@@ -425,8 +323,6 @@ describe("Tontine — sécurité : un compte suspendu ou banni ne peut plus rejo
   });
 
   it("refuse join_basket pour un compte suspendu, puis l'autorise une fois réactivé", async () => {
-    // 1. Suspendu : join_basket doit être refusé côté base (SECURITY DEFINER),
-    // pas seulement côté interface — la sanction admin doit avoir un effet réel.
     const { error: suspendError } = await admin
       .from("profiles")
       .update({ status: "suspended" })
@@ -448,14 +344,13 @@ describe("Tontine — sécurité : un compte suspendu ou banni ne peut plus rejo
     expect(joinBlocked).not.toBeNull();
     expect(joinBlocked!.message).toContain("account_not_active");
 
-    // Aucune adhésion ne doit avoir été créée.
     const { count: membershipsWhileSuspended } = await admin
       .from("tontine_memberships")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
     expect(membershipsWhileSuspended ?? 0).toBe(0);
 
-    // 2. Banni : même blocage.
+    // Banni : même blocage.
     await admin.from("profiles").update({ status: "banned" }).eq("id", user.id);
     const bannedClient = await signIn(user.email);
     const { error: joinBannedBlocked } = await bannedClient
@@ -464,7 +359,7 @@ describe("Tontine — sécurité : un compte suspendu ou banni ne peut plus rejo
     expect(joinBannedBlocked).not.toBeNull();
     expect(joinBannedBlocked!.message).toContain("account_not_active");
 
-    // 3. Réactivé : join_basket doit de nouveau fonctionner normalement.
+    // Réactivé : join_basket doit de nouveau fonctionner.
     await admin.from("profiles").update({ status: "active" }).eq("id", user.id);
     const activeClient = await signIn(user.email);
     const { data: joinResult, error: joinOk } = await activeClient
@@ -472,5 +367,63 @@ describe("Tontine — sécurité : un compte suspendu ou banni ne peut plus rejo
       .single();
     expect(joinOk).toBeNull();
     expect(joinResult?.contribution_id).toBeTruthy();
+  });
+});
+
+describe("Tontine — balayage quotidien : expiration des réservations impayées après 24h", () => {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  let basketTypeId: string;
+  let user: { id: string; email: string };
+
+  beforeAll(async () => {
+    const { data: basketType } = await admin
+      .from("tontine_basket_types")
+      .insert({ label: "Test expiration", contribution_amount: 3690, interval_days: 2 })
+      .select("id")
+      .single();
+    basketTypeId = basketType!.id;
+    user = await createConfirmedUser(admin, "expire", "703");
+  }, 30000);
+
+  afterAll(async () => {
+    await admin.auth.admin.deleteUser(user.id);
+    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
+    await admin.from("tontine_basket_types").delete().eq("id", basketTypeId);
+  });
+
+  it("une réservation (dépôt d'entrée) jamais payée est expirée après 24h par le sweep", async () => {
+    await admin
+      .from("tontine_basket_instances")
+      .insert({ basket_type_id: basketTypeId, status: "filling" })
+      .select("id")
+      .single();
+
+    const client = await signIn(user.email);
+    const { data: joinResult } = await client.rpc("join_basket", { p_basket_type_id: basketTypeId }).single();
+
+    // Vieillit la réservation de plus de 24h.
+    const old = new Date(Date.now() - 25 * 3600 * 1000).toISOString();
+    await admin.from("tontine_contributions").update({ created_at: old }).eq("id", joinResult!.contribution_id);
+
+    const { data: sweep, error } = await admin.rpc("fn_daily_tontine_sweep");
+    expect(error).toBeNull();
+    expect((sweep as { expired: number }).expired).toBeGreaterThanOrEqual(1);
+
+    const { data: membership } = await admin
+      .from("tontine_memberships")
+      .select("status")
+      .eq("id", joinResult!.membership_id)
+      .single();
+    expect(membership?.status).toBe("removed_missed_payment");
+
+    const { data: contribution } = await admin
+      .from("tontine_contributions")
+      .select("status")
+      .eq("id", joinResult!.contribution_id)
+      .single();
+    expect(contribution?.status).toBe("missed");
   });
 });
