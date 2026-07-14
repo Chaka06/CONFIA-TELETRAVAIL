@@ -52,7 +52,13 @@ export function ConnexionForm() {
       return;
     }
 
-    router.replace(searchParams.get("redirect") || "/tableau-de-bord");
+    const redirectParam = searchParams.get("redirect");
+    // N'accepte qu'un chemin interne relatif : un "redirect" absolu ou
+    // protocol-relatif (ex. ?redirect=https://site-piege.com ou //site-piege.com)
+    // permettrait de rediriger un utilisateur qui vient de se connecter
+    // légitimement vers un site externe (open redirect / hameçonnage).
+    const isSafeRedirect = !!redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+    router.replace(isSafeRedirect ? redirectParam : "/tableau-de-bord");
     router.refresh();
   }
 

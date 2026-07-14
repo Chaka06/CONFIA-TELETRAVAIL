@@ -76,7 +76,8 @@ export async function requestSignupOtp(input: {
     }
     // Inscription précédente jamais confirmée (code jamais saisi) : on
     // repart proprement d'un compte neuf plutôt que d'échouer.
-    await admin.auth.admin.deleteUser(existingProfile.id);
+    const { error: deleteError } = await admin.auth.admin.deleteUser(existingProfile.id);
+    if (deleteError) throw new SignupOtpError("cleanup_failed");
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
