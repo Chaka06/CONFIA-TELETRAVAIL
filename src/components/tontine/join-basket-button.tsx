@@ -24,7 +24,9 @@ export function JoinBasketButton({ basketTypeId, amount }: { basketTypeId: strin
       toast.error(
         body.error === "already_member_of_this_basket_type"
           ? "Vous êtes déjà membre de ce panier."
-          : "Impossible de rejoindre ce panier pour le moment."
+          : body.error === "account_not_active"
+            ? "Votre compte est suspendu : vous ne pouvez pas rejoindre de panier."
+            : "Impossible de rejoindre ce panier pour le moment."
       );
       return;
     }

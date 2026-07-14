@@ -52,6 +52,24 @@ export function ConnexionForm() {
       return;
     }
 
+    // Un compte suspendu ou banni ne doit pas pouvoir accéder à la
+    // plateforme : on referme immédiatement la session (ce qui efface le
+    // cookie côté navigateur, sans provoquer de boucle de redirection avec le
+    // proxy qui raisonne sur la seule présence du cookie).
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("status")
+      .eq("email", values.email)
+      .maybeSingle();
+
+    if (profileRow && profileRow.status !== "active") {
+      await supabase.auth.signOut();
+      setServerError(
+        "Ce compte est actuellement suspendu. Contactez le support pour plus d'informations."
+      );
+      return;
+    }
+
     const redirectParam = searchParams.get("redirect");
     // N'accepte qu'un chemin interne relatif : un "redirect" absolu ou
     // protocol-relatif (ex. ?redirect=https://site-piege.com ou //site-piege.com)

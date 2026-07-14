@@ -399,3 +399,78 @@ describe("Tontine — sécurité : une adhésion non payée ne compte jamais com
     await admin.auth.admin.deleteUser(mismatchUser.id);
   });
 });
+
+describe("Tontine — sécurité : un compte suspendu ou banni ne peut plus rejoindre de panier", () => {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  let basketTypeId: string;
+  let user: { id: string; email: string };
+
+  beforeAll(async () => {
+    const { data: basketType } = await admin
+      .from("tontine_basket_types")
+      .insert({ label: "Test statut compte", contribution_amount: 2468, interval_days: 2 })
+      .select("id")
+      .single();
+    basketTypeId = basketType!.id;
+    user = await createConfirmedUser(admin, "statususer", "702");
+  }, 30000);
+
+  afterAll(async () => {
+    await admin.auth.admin.deleteUser(user.id);
+    await admin.from("tontine_basket_instances").delete().eq("basket_type_id", basketTypeId);
+    await admin.from("tontine_basket_types").delete().eq("id", basketTypeId);
+  });
+
+  it("refuse join_basket pour un compte suspendu, puis l'autorise une fois réactivé", async () => {
+    // 1. Suspendu : join_basket doit être refusé côté base (SECURITY DEFINER),
+    // pas seulement côté interface — la sanction admin doit avoir un effet réel.
+    const { error: suspendError } = await admin
+      .from("profiles")
+      .update({ status: "suspended" })
+      .eq("id", user.id);
+    expect(suspendError).toBeNull();
+
+    // Vérifie que l'écriture a bien pris (non-régression du trigger de garde 0010).
+    const { data: suspendedProfile } = await admin
+      .from("profiles")
+      .select("status")
+      .eq("id", user.id)
+      .single();
+    expect(suspendedProfile?.status).toBe("suspended");
+
+    const suspendedClient = await signIn(user.email);
+    const { error: joinBlocked } = await suspendedClient
+      .rpc("join_basket", { p_basket_type_id: basketTypeId })
+      .single();
+    expect(joinBlocked).not.toBeNull();
+    expect(joinBlocked!.message).toContain("account_not_active");
+
+    // Aucune adhésion ne doit avoir été créée.
+    const { count: membershipsWhileSuspended } = await admin
+      .from("tontine_memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    expect(membershipsWhileSuspended ?? 0).toBe(0);
+
+    // 2. Banni : même blocage.
+    await admin.from("profiles").update({ status: "banned" }).eq("id", user.id);
+    const bannedClient = await signIn(user.email);
+    const { error: joinBannedBlocked } = await bannedClient
+      .rpc("join_basket", { p_basket_type_id: basketTypeId })
+      .single();
+    expect(joinBannedBlocked).not.toBeNull();
+    expect(joinBannedBlocked!.message).toContain("account_not_active");
+
+    // 3. Réactivé : join_basket doit de nouveau fonctionner normalement.
+    await admin.from("profiles").update({ status: "active" }).eq("id", user.id);
+    const activeClient = await signIn(user.email);
+    const { data: joinResult, error: joinOk } = await activeClient
+      .rpc("join_basket", { p_basket_type_id: basketTypeId })
+      .single();
+    expect(joinOk).toBeNull();
+    expect(joinResult?.contribution_id).toBeTruthy();
+  });
+});

@@ -24,7 +24,7 @@ export class TontineServiceError extends Error {
 export async function joinBasketAndPay(userClient: UserSupabaseClient, params: { basketTypeId: string; userId: string }) {
   const { data: profile, error: profileError } = await userClient
     .from("profiles")
-    .select("first_name, last_name, email, phone_number")
+    .select("first_name, last_name, email, phone_number, status")
     .eq("id", params.userId)
     .single();
 
@@ -57,7 +57,7 @@ export async function initiateContributionPayment(
   params: {
     contributionId: string;
     userId: string;
-    profile?: { first_name: string; last_name: string; email: string; phone_number: string };
+    profile?: { first_name: string; last_name: string; email: string; phone_number: string; status: string };
     onSessionFailure?: () => Promise<void>;
   }
 ) {
@@ -65,11 +65,18 @@ export async function initiateContributionPayment(
   if (!profile) {
     const { data, error } = await userClient
       .from("profiles")
-      .select("first_name, last_name, email, phone_number")
+      .select("first_name, last_name, email, phone_number, status")
       .eq("id", params.userId)
       .single();
     if (error || !data) throw new TontineServiceError("profile_not_found");
     profile = data;
+  }
+
+  // Un compte suspendu ou banni ne peut plus payer de cotisation (défense en
+  // profondeur : join_basket bloque déjà l'entrée côté base, mais les
+  // échéances 2 à 5 passent uniquement par ici).
+  if (profile.status !== "active") {
+    throw new TontineServiceError("account_not_active");
   }
 
   const { data: contribution, error: contribError } = await userClient
