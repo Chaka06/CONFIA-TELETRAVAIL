@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/tableau-de-bord";
+  const rawNext = searchParams.get("next");
+  // `next` n'est pas lié cryptographiquement au token : un lien légitime
+  // pourrait être repris avec un `next` modifié pour rediriger, une fois la
+  // session authentifiée établie, vers un site externe (hameçonnage).
+  const next = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/tableau-de-bord";
 
   if (tokenHash && type) {
     const supabase = await createClient();
