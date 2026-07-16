@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/landing/site-header";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,15 +18,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default async function PolitiqueConfidentialitePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export default function PolitiqueConfidentialitePage() {
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader isAuthenticated={!!user} />
+      <SiteHeader />
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Politique de confidentialité</h1>

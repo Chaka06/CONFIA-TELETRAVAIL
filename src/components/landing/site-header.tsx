@@ -16,7 +16,13 @@ const NAV_LINKS = [
   { href: "#securite", label: "Sécurité" },
 ];
 
-export function SiteHeader({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
+// Le cookie de session ne change pas pendant la durée de vie du composant
+// (une reconnexion/déconnexion recharge la page) : rien à écouter.
+function noopSubscribe() {
+  return () => {};
+}
+
+export function SiteHeader() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = React.useState(pathname);
@@ -25,6 +31,20 @@ export function SiteHeader({ isAuthenticated = false }: { isAuthenticated?: bool
     setPrevPathname(pathname);
     setOpen(false);
   }
+
+  // Vérification optimiste, purement client, sans appel réseau : simple
+  // présence du cookie de session (même logique que le Proxy). Ça évite de
+  // rendre /, /paniers et les pages légales entièrement dynamiques juste
+  // pour afficher le bon libellé de bouton — un getUser() côté serveur sur
+  // ces pages à fort trafic ajoutait ~1s de latence à chaque visite en
+  // désactivant leur cache statique (revalidate). useSyncExternalStore
+  // renvoie `false` au rendu serveur (pas de document) et la vraie valeur
+  // une fois monté côté client, sans risque d'incohérence d'hydratation.
+  const isAuthenticated = React.useSyncExternalStore(
+    noopSubscribe,
+    () => document.cookie.split("; ").some((c) => c.startsWith("sb-") && c.includes("-auth-token")),
+    () => false
+  );
 
   const logoHref = isAuthenticated ? "/tableau-de-bord" : "/";
 

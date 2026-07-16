@@ -15,37 +15,38 @@ export const revalidate = 30;
 
 export default async function PaniersPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { data: basketTypes } = await supabase
-    .from("tontine_basket_types")
-    .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount, capacity")
-    .eq("is_active", true)
-    .order("contribution_amount");
+  // Les trois lectures sont indépendantes (instances ne filtre pas par type de
+  // panier) : les paralléliser au lieu de les enchaîner évite d'attendre
+  // trois allers-retours réseau l'un après l'autre.
+  const [{ data: userData }, { data: basketTypes }, { data: instances }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("tontine_basket_types")
+      .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount, capacity")
+      .eq("is_active", true)
+      .order("contribution_amount"),
+    supabase
+      .from("tontine_basket_instances")
+      .select("basket_type_id, member_count, created_at")
+      .eq("status", "filling")
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const user = userData.user;
 
   // Nombre de membres inscrits sur le panier en cours de remplissage de chaque
   // formule (celui que rejoindra un nouvel arrivant : le plus ancien 'filling').
   // On n'affiche JAMAIS qui est en tête de file ni la position d'un membre :
   // seulement le compteur membres/capacité tant que le panier n'est pas plein.
-  let filledCount: Record<string, number> = {};
-  if (basketTypes) {
-    const { data: instances } = await supabase
-      .from("tontine_basket_instances")
-      .select("basket_type_id, member_count, created_at")
-      .eq("status", "filling")
-      .order("created_at", { ascending: true });
-
-    filledCount = (instances ?? []).reduce<Record<string, number>>((acc, i) => {
-      if (!(i.basket_type_id in acc)) acc[i.basket_type_id] = i.member_count;
-      return acc;
-    }, {});
-  }
+  const filledCount = (instances ?? []).reduce<Record<string, number>>((acc, i) => {
+    if (!(i.basket_type_id in acc)) acc[i.basket_type_id] = i.member_count;
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader isAuthenticated={!!user} />
+      <SiteHeader />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-2xl text-center">
