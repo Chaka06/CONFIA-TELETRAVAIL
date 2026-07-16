@@ -1,0 +1,30 @@
+-- ============================================================================
+-- 0013 — Corrige une récursion infinie RLS qui cassait TOUTE lecture de
+-- tontine_memberships / tontine_contributions par un utilisateur connecté
+-- ============================================================================
+-- Trouvé en diagnostiquant un échec systématique de paiement de cotisation :
+-- la policy `memberships_select_same_basket` (migration 0007) interroge
+-- tontine_memberships DEPUIS une policy SUR tontine_memberships elle-même,
+-- sans passer par une fonction SECURITY DEFINER — cette sous-requête est
+-- donc elle aussi soumise à RLS, qui réévalue la même policy, indéfiniment.
+-- Résultat concret : Postgres renvoyait l'erreur 42P17 "infinite recursion
+-- detected in policy for relation tontine_memberships" pour TOUTE lecture
+-- de tontine_memberships OU tontine_contributions par le client authentifié
+-- d'un utilisateur normal (contributions_select_own interroge elle-même
+-- tontine_memberships). C'est ce qui faisait échouer
+-- initiateContributionPayment() dès sa toute première lecture — AVANT même
+-- d'appeler GeniusPay — ce qui expliquait "impossible de rejoindre le
+-- panier" indépendamment de la validité des clés GeniusPay.
+--
+-- Cette policy permettait à un membre de voir les AUTRES membres de son
+-- panier (file d'attente visible) — ce qui contredit de toute façon la
+-- règle produit du nouveau modèle à 20 membres/paiement unique : ne jamais
+-- révéler la position d'un membre ni qui d'autre est dans la file avant que
+-- le panier soit plein. On la supprime donc entièrement plutôt que de la
+-- réparer avec une fonction SECURITY DEFINER : chaque membre ne voit plus
+-- que sa propre ligne (memberships_select_own) ou tout, s'il est admin
+-- (memberships_select_admin) — aucun code applicatif ne dépendait de la
+-- policy supprimée (vérifié : aucune lecture de membres tiers depuis un
+-- contexte utilisateur authentifié dans le code actuel).
+
+drop policy if exists memberships_select_same_basket on public.tontine_memberships;

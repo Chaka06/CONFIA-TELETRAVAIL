@@ -427,3 +427,60 @@ describe("Tontine — balayage quotidien : expiration des réservations impayée
     expect(contribution?.status).toBe("missed");
   });
 });
+
+describe("Tontine — sécurité : un membre connecté peut relire sa propre cotisation après adhésion (régression RLS)", () => {
+  // Trouvé lors d'un diagnostic en production : la policy RLS
+  // memberships_select_same_basket (retirée en 0013) se référençait
+  // elle-même, provoquant "infinite recursion detected in policy for
+  // relation tontine_memberships" (42P17) sur TOUTE lecture de
+  // tontine_memberships/tontine_contributions par le client authentifié
+  // d'un utilisateur normal — cassant initiateContributionPayment() dès sa
+  // première lecture, avant même l'appel à GeniusPay. Aucun test existant
+  // ne relisait une cotisation via le client d'un utilisateur réellement
+  // connecté (RLS) plutôt que via le client service_role (qui contourne
+  // RLS et masquait donc totalement ce bug).
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  let basketTypeId: string;
+  let user: { id: string; email: string };
+
+  beforeAll(async () => {
+    const { data: basketType } = await admin
+      .from("tontine_basket_types")
+      .select("id")
+      .eq("contribution_amount", 1000)
+      .single();
+    basketTypeId = basketType!.id;
+    user = await createConfirmedUser(admin, "rlsregression", "800");
+  }, 30000);
+
+  afterAll(async () => {
+    await admin.auth.admin.deleteUser(user.id);
+  });
+
+  it("le client authentifié de l'utilisateur relit sa cotisation (avec et sans embed) sans erreur RLS", async () => {
+    const client = await signIn(user.email);
+    const { data: joinResult, error: joinError } = await client
+      .rpc("join_basket", { p_basket_type_id: basketTypeId })
+      .single();
+    expect(joinError).toBeNull();
+
+    const { data: withEmbed, error: withEmbedError } = await client
+      .from("tontine_contributions")
+      .select("id, amount, status, membership_id, tontine_memberships!inner(user_id)")
+      .eq("id", joinResult!.contribution_id)
+      .single();
+    expect(withEmbedError).toBeNull();
+    expect(withEmbed?.id).toBe(joinResult!.contribution_id);
+
+    const { data: membership, error: membershipError } = await client
+      .from("tontine_memberships")
+      .select("id, status")
+      .eq("id", joinResult!.membership_id)
+      .single();
+    expect(membershipError).toBeNull();
+    expect(membership?.status).toBe("active");
+  });
+});
