@@ -51,11 +51,17 @@ export function ClaimPayoutForm({ token }: { token: string }) {
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
-    const res = await fetch("/api/tontine/payouts/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, ...values }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/tontine/payouts/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, ...values }),
+      });
+    } catch {
+      setServerError("Connexion impossible. Vérifiez votre connexion et réessayez.");
+      return;
+    }
 
     if (!res.ok) {
       setServerError("Impossible d'enregistrer vos coordonnées. Réessayez ou contactez le support.");

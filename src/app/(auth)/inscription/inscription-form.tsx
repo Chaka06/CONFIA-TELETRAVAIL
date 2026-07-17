@@ -58,31 +58,35 @@ export function InscriptionForm() {
       setOtpError(null);
       setVerifying(true);
 
-      const res = await fetch("/api/auth/signup-otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail, code }),
-      });
-      const body = (await res.json().catch(() => ({}))) as { tokenHash?: string; error?: string };
+      try {
+        const res = await fetch("/api/auth/signup-otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: pendingEmail, code }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { tokenHash?: string; error?: string };
 
-      if (!res.ok || !body.tokenHash) {
+        if (!res.ok || !body.tokenHash) {
+          setOtpError(OTP_ERROR_MESSAGES[body.error ?? ""] ?? "Une erreur est survenue. Veuillez réessayer.");
+          return;
+        }
+
+        const supabase = createClient();
+        const { error } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: body.tokenHash });
+
+        if (error) {
+          setOtpError("Une erreur est survenue. Veuillez réessayer.");
+          return;
+        }
+
+        router.replace("/bienvenue");
+        router.refresh();
+      } catch {
+        // Échec réseau : ne jamais laisser le champ de code bloqué sans retour.
+        setOtpError("Connexion impossible. Vérifiez votre connexion et réessayez.");
+      } finally {
         setVerifying(false);
-        setOtpError(OTP_ERROR_MESSAGES[body.error ?? ""] ?? "Une erreur est survenue. Veuillez réessayer.");
-        return;
       }
-
-      const supabase = createClient();
-      const { error } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: body.tokenHash });
-
-      setVerifying(false);
-
-      if (error) {
-        setOtpError("Une erreur est survenue. Veuillez réessayer.");
-        return;
-      }
-
-      router.replace("/bienvenue");
-      router.refresh();
     },
     [pendingEmail, router, verifying]
   );
@@ -93,22 +97,26 @@ export function InscriptionForm() {
     setOtpError(null);
     setResending(true);
 
-    const res = await fetch("/api/auth/signup-otp/resend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pendingEmail }),
-    });
+    try {
+      const res = await fetch("/api/auth/signup-otp/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail }),
+      });
 
-    setResending(false);
+      if (!res.ok) {
+        setResendMessage("Impossible de renvoyer le code pour le moment. Réessayez dans quelques instants.");
+        return;
+      }
 
-    if (!res.ok) {
-      setResendMessage("Impossible de renvoyer le code pour le moment. Réessayez dans quelques instants.");
-      return;
+      setOtp("");
+      setResendMessage("Un nouveau code vient d'être envoyé.");
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      setResendMessage("Connexion impossible. Vérifiez votre connexion et réessayez.");
+    } finally {
+      setResending(false);
     }
-
-    setOtp("");
-    setResendMessage("Un nouveau code vient d'être envoyé.");
-    setResendCooldown(RESEND_COOLDOWN_SECONDS);
   }
 
   const form = useForm<SignUpInput>({
@@ -130,11 +138,17 @@ export function InscriptionForm() {
   async function onSubmit(values: SignUpInput) {
     setServerError(null);
 
-    const res = await fetch("/api/auth/signup-otp/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/auth/signup-otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+    } catch {
+      setServerError("Connexion impossible. Vérifiez votre connexion et réessayez.");
+      return;
+    }
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };

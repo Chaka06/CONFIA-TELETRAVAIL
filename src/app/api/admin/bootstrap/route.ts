@@ -1,6 +1,16 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+
+/** Compare deux secrets en temps constant, comme pour la signature du webhook GeniusPay. */
+function secretsMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 /**
  * Provisionnement du compte super_admin à partir de variables d'environnement
@@ -22,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const providedSecret = request.headers.get("x-bootstrap-secret");
-  if (!providedSecret || providedSecret !== expectedSecret) {
+  if (!providedSecret || !secretsMatch(providedSecret, expectedSecret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

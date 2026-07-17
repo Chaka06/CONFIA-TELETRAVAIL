@@ -11,27 +11,34 @@ export function JoinBasketButton({ basketTypeId, amount }: { basketTypeId: strin
 
   async function handleJoin() {
     setPending(true);
-    const res = await fetch("/api/tontine/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ basketTypeId }),
-    });
+    try {
+      const res = await fetch("/api/tontine/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ basketTypeId }),
+      });
 
-    const body = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string };
+      const body = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string };
 
-    if (!res.ok || !body.redirectUrl) {
+      if (!res.ok || !body.redirectUrl) {
+        toast.error(
+          body.error === "already_member_of_this_basket_type"
+            ? "Vous êtes déjà membre de ce panier."
+            : body.error === "account_not_active"
+              ? "Votre compte est suspendu : vous ne pouvez pas rejoindre de panier."
+              : "Impossible de rejoindre ce panier pour le moment."
+        );
+        return;
+      }
+
+      window.location.href = body.redirectUrl;
+    } catch {
+      // Échec réseau (hors ligne, timeout...) : ne jamais laisser le bouton
+      // bloqué en chargement sans retour à l'utilisateur.
+      toast.error("Connexion impossible. Vérifiez votre connexion et réessayez.");
+    } finally {
       setPending(false);
-      toast.error(
-        body.error === "already_member_of_this_basket_type"
-          ? "Vous êtes déjà membre de ce panier."
-          : body.error === "account_not_active"
-            ? "Votre compte est suspendu : vous ne pouvez pas rejoindre de panier."
-            : "Impossible de rejoindre ce panier pour le moment."
-      );
-      return;
     }
-
-    window.location.href = body.redirectUrl;
   }
 
   return (
