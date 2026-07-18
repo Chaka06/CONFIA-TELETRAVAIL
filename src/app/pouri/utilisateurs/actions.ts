@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, requireSuperAdmin } from "@/lib/admin/require-admin";
 import { logAdminAction } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendTransactionalEmail } from "@/lib/email/send";
+import { accountStatusChangedEmail } from "@/lib/email/templates";
+import { getServerEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 type AccountStatus = Database["public"]["Enums"]["account_status"];
@@ -19,7 +22,12 @@ export async function adminSetUserStatus(userId: string, status: AccountStatus) 
 
   const admin = createAdminClient();
 
-  const { error } = await admin.from("profiles").update({ status }).eq("id", userId);
+  const { data: targetProfile, error } = await admin
+    .from("profiles")
+    .update({ status })
+    .eq("id", userId)
+    .select("email")
+    .single();
   if (error) throw new Error(error.message);
 
   await logAdminAction({
@@ -29,6 +37,16 @@ export async function adminSetUserStatus(userId: string, status: AccountStatus) 
     entityId: userId,
     afterData: { status },
   });
+
+  if (targetProfile?.email) {
+    const env = getServerEnv();
+    await sendTransactionalEmail({
+      userId,
+      toEmail: targetProfile.email,
+      templateKey: `account_status_${status}`,
+      template: accountStatusChangedEmail({ status, dashboardUrl: `${env.APP_BASE_URL}/tableau-de-bord` }),
+    });
+  }
 
   revalidatePath("/pouri/utilisateurs");
 }

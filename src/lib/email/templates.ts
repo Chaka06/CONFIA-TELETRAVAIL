@@ -1,4 +1,4 @@
-import { formatFcfa, renderEmailLayout } from "./layout";
+import { escapeHtml, formatFcfa, renderEmailLayout } from "./layout";
 
 export type EmailTemplate = { subject: string; html: string };
 
@@ -36,7 +36,7 @@ export function contributionFailedEmail(params: { amount: number; reason: string
     html: renderEmailLayout({
       title: "Cotisation non aboutie",
       paragraphs: [
-        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> n'a pas pu être confirmée (${params.reason}).`,
+        `Votre cotisation de <strong>${formatFcfa(params.amount)}</strong> n'a pas pu être confirmée (${escapeHtml(params.reason)}).`,
         "Merci de réessayer rapidement : au-delà du jour de l'échéance, votre place dans le panier n'est plus garantie.",
       ],
     }),
@@ -44,12 +44,15 @@ export function contributionFailedEmail(params: { amount: number; reason: string
 }
 
 export function payoutReadyEmail(params: { basketLabel: string; amount: number; claimUrl: string }): EmailTemplate {
+  const basketLabel = escapeHtml(params.basketLabel);
   return {
+    // Le sujet n'est pas rendu comme HTML par les clients de messagerie : pas
+    // besoin d'y échapper basketLabel (seul le corps HTML l'exige).
     subject: `Félicitations, vous remportez le ${params.basketLabel} !`,
     html: renderEmailLayout({
       title: "Votre gain est prêt",
       paragraphs: [
-        `Le ${params.basketLabel} est complet et vous êtes le premier arrivé : vous remportez <strong>${formatFcfa(params.amount)}</strong>.`,
+        `Le ${basketLabel} est complet et vous êtes le premier arrivé : vous remportez <strong>${formatFcfa(params.amount)}</strong>.`,
         "Cliquez sur le bouton ci-dessous pour indiquer votre numéro et le moyen de paiement (Orange Money, Wave, MTN Money ou Moov Money) sur lequel vous souhaitez le recevoir.",
       ],
       button: { label: "Recevoir mon gain", url: params.claimUrl },
@@ -80,4 +83,37 @@ export function accountAlertEmail(params: { title: string; message: string; dash
       button: { label: "Accéder à mon compte", url: params.dashboardUrl },
     }),
   };
+}
+
+/**
+ * Un administrateur change le statut d'un compte (adminSetUserStatus,
+ * src/app/pouri/utilisateurs/actions.ts) : le titulaire doit toujours en
+ * être informé, plutôt que de découvrir un blocage silencieux en essayant
+ * de rejoindre un panier.
+ */
+export function accountStatusChangedEmail(params: {
+  status: "active" | "suspended" | "banned";
+  dashboardUrl: string;
+}): EmailTemplate {
+  if (params.status === "banned") {
+    return accountAlertEmail({
+      title: "Votre compte Confssa a été banni",
+      message:
+        "Votre compte a été banni par un administrateur, suite à une violation de nos conditions d'utilisation. Vous ne pouvez plus rejoindre de panier. Si vous pensez qu'il s'agit d'une erreur, contactez-nous.",
+      dashboardUrl: params.dashboardUrl,
+    });
+  }
+  if (params.status === "suspended") {
+    return accountAlertEmail({
+      title: "Votre compte Confssa a été suspendu",
+      message:
+        "Votre compte a été temporairement suspendu par un administrateur. Vous ne pouvez plus rejoindre de nouveau panier tant que la suspension est active. Pour toute question, contactez-nous.",
+      dashboardUrl: params.dashboardUrl,
+    });
+  }
+  return accountAlertEmail({
+    title: "Votre compte Confssa a été réactivé",
+    message: "Bonne nouvelle : votre compte est de nouveau actif. Vous pouvez à nouveau rejoindre un panier dès maintenant.",
+    dashboardUrl: params.dashboardUrl,
+  });
 }
