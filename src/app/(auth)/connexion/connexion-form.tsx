@@ -13,6 +13,7 @@ import { signInSchema, type SignInInput } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Form,
   FormControl,
@@ -112,7 +113,7 @@ export function ConnexionForm() {
                     </Link>
                   </div>
                   <FormControl>
-                    <Input type="password" autoComplete="current-password" {...field} />
+                    <PasswordInput autoComplete="current-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

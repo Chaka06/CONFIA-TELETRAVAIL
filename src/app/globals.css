@@ -173,6 +173,22 @@
   html {
     @apply font-sans;
   }
+
+  /*
+    Safari iOS zoome automatiquement l'écran quand un champ de saisie a une
+    taille de police inférieure à 16px au moment où il reçoit le focus — un
+    comportement natif du navigateur, pas un bug de l'app, mais désagréable.
+    Garde-fou global (au-delà des classes Tailwind déjà à 16px sur mobile) :
+    garantit qu'aucun champ, même ajouté par la suite sans y penser, ne
+    déclenche ce zoom sur petit écran.
+  */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer utilities {

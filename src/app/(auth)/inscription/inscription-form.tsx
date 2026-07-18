@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { OtpInput } from "@/components/auth/otp-input";
 import {
   Form,
@@ -341,7 +342,7 @@ export function InscriptionForm() {
                   <FormItem>
                     <FormLabel>Mot de passe</FormLabel>
                     <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -354,7 +355,7 @@ export function InscriptionForm() {
                   <FormItem>
                     <FormLabel>Confirmation</FormLabel>
                     <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

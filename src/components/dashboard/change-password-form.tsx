@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Form,
   FormControl,
@@ -47,7 +47,7 @@ export function ChangePasswordForm() {
             <FormItem>
               <FormLabel>Nouveau mot de passe</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" {...field} />
+                <PasswordInput autoComplete="new-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -60,7 +60,7 @@ export function ChangePasswordForm() {
             <FormItem>
               <FormLabel>Confirmation</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" {...field} />
+                <PasswordInput autoComplete="new-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
