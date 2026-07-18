@@ -507,3 +507,32 @@ describe("Tontine — commission plateforme de 5% sur le gain de chaque formule"
     }
   });
 });
+
+describe("Tontine — sécurité : /paniers reste lisible par un visiteur anonyme (régression RLS+grant)", () => {
+  // Trouvé lors d'un audit complet : la migration 0016 avait créé la policy
+  // RLS basket_instances_select_all (`using (true)`) mais oublié le GRANT
+  // SELECT de base sur le rôle `anon` — sans lui, Postgres refuse la requête
+  // (42501) avant même d'évaluer la policy RLS. Le bug que 0016 devait
+  // corriger ("/paniers affiche toujours 0/20 aux visiteurs non connectés")
+  // n'avait donc jamais été réellement corrigé en production, alors que
+  // tous les tests existants passaient par le client service_role (qui
+  // contourne RLS ET les grants) ou un utilisateur connecté — jamais par un
+  // client vraiment anonyme. Corrigé par la migration 0017.
+  it("un client anon (non connecté) peut lire tontine_basket_instances, comme tontine_basket_types", async () => {
+    const anon = createClient(SUPABASE_URL, ANON_KEY);
+
+    const { data: instances, error: instancesError } = await anon
+      .from("tontine_basket_instances")
+      .select("id, member_count, status")
+      .limit(1);
+    expect(instancesError).toBeNull();
+    expect(instances).not.toBeNull();
+
+    const { data: types, error: typesError } = await anon
+      .from("tontine_basket_types")
+      .select("id, label")
+      .limit(1);
+    expect(typesError).toBeNull();
+    expect(types).not.toBeNull();
+  });
+});
