@@ -6,24 +6,23 @@ import { formatFcfa } from "@/lib/format";
  * Échappe les caractères spéciaux du sous-ensemble HTML de Telegram, pour
  * qu'un prénom d'utilisateur (donnée saisie librement à l'inscription) ne
  * puisse jamais injecter de faux lien ou de mise en forme trompeuse dans un
- * message envoyé au groupe admin.
+ * message envoyé au groupe.
  */
-function escapeTelegramHtml(text: string): string {
+export function escapeTelegramHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**
- * Notifications du groupe Telegram admin. Tolérant à l'absence de
- * configuration (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID pas encore définies) :
- * un envoi qui échoue ou n'est pas configuré ne doit jamais faire échouer
+ * Envoie un message à un chat Telegram précis (groupe, réponse à une
+ * commande...). Tolérant à l'absence de configuration du token : un envoi
+ * qui échoue ou n'est pas configuré ne doit jamais faire échouer
  * l'opération métier qui l'a déclenché.
  */
-async function sendTelegramMessage(text: string): Promise<void> {
+export async function sendTelegramMessageTo(chatId: string | number, text: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
 
-  if (!token || !chatId) {
-    console.warn("telegram_not_configured", { hasToken: !!token, hasChatId: !!chatId });
+  if (!token) {
+    console.warn("telegram_not_configured");
     return;
   }
 
@@ -40,6 +39,19 @@ async function sendTelegramMessage(text: string): Promise<void> {
   } catch (err) {
     console.error("telegram_send_error", err);
   }
+}
+
+/**
+ * Diffuse un message dans le groupe configuré (TELEGRAM_CHAT_ID) — les
+ * notifications automatiques déclenchées par le site (adhésion, gain...).
+ */
+async function sendTelegramMessage(text: string): Promise<void> {
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!chatId) {
+    console.warn("telegram_not_configured", { hasChatId: false });
+    return;
+  }
+  await sendTelegramMessageTo(chatId, text);
 }
 
 /**
