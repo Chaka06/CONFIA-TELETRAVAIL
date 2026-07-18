@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
-import { escapeTelegramHtml, pickJoinEncouragement, progressBar, sendTelegramMessageTo } from "@/lib/telegram";
+import { escapeTelegramHtml, fetchBasketStatusLines, pickJoinEncouragement, sendTelegramMessageTo } from "@/lib/telegram";
 import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
 
 export const maxDuration = 15;
@@ -50,31 +50,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   if (command === "/paniers") {
-    const [{ data: basketTypes }, { data: instances }] = await Promise.all([
-      admin
-        .from("tontine_basket_types")
-        .select("id, label, capacity")
-        .eq("is_active", true)
-        .order("contribution_amount"),
-      admin
-        .from("tontine_basket_instances")
-        .select("basket_type_id, member_count, created_at")
-        .eq("status", "filling")
-        .order("created_at", { ascending: true }),
-    ]);
-
-    const filledCount: Record<string, number> = {};
-    for (const i of instances ?? []) {
-      if (!(i.basket_type_id in filledCount)) filledCount[i.basket_type_id] = i.member_count;
-    }
-
-    const lines = (basketTypes ?? []).map((bt) => {
-      const count = filledCount[bt.id] ?? 0;
-      return (
-        `🔸 <b>${escapeTelegramHtml(bt.label)}</b>\n` +
-        `${progressBar(count, bt.capacity)} <i>${count}/${bt.capacity} membres</i>`
-      );
-    });
+    const lines = await fetchBasketStatusLines(admin);
     const body =
       lines.length > 0
         ? `💰 <b>Paniers en cours</b>\n\n${lines.join("\n\n")}\n\n${pickJoinEncouragement()}`

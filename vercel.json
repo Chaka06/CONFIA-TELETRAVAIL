@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/tontine-sweep",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/telegram-encouragement",
+      "schedule": "0 14 * * *"
     }
   ]
 }
