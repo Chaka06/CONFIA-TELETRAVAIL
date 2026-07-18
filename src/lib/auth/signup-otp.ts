@@ -60,7 +60,6 @@ export async function requestSignupOtp(input: {
   dateOfBirth: string;
   city: string;
   phoneNumber: string;
-  referralCode: string | null;
 }) {
   const admin = createAdminClient();
 
@@ -90,7 +89,6 @@ export async function requestSignupOtp(input: {
       date_of_birth: input.dateOfBirth,
       city: input.city,
       phone_number: input.phoneNumber,
-      referral_code_input: input.referralCode || null,
     },
   });
 

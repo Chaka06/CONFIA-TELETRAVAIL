@@ -12,7 +12,6 @@ function baseSignUp(overrides: Partial<Record<string, unknown>> = {}) {
     phoneNumber: "+2250700000001",
     password: "Password1",
     confirmPassword: "Password1",
-    referralCode: "",
     acceptTerms: true as const,
     ...overrides,
   };
@@ -53,19 +52,6 @@ describe("signUpSchema", () => {
   it("rejette si les conditions d'utilisation ne sont pas acceptées", () => {
     const result = signUpSchema.safeParse(baseSignUp({ acceptTerms: false as unknown as true }));
     expect(result.success).toBe(false);
-  });
-
-  it("met en majuscules le code promo saisi", () => {
-    const result = signUpSchema.safeParse(baseSignUp({ referralCode: "abc123" }));
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.referralCode).toBe("ABC123");
-    }
-  });
-
-  it("accepte l'absence de code promo (facultatif)", () => {
-    const result = signUpSchema.safeParse(baseSignUp({ referralCode: "" }));
-    expect(result.success).toBe(true);
   });
 });
 

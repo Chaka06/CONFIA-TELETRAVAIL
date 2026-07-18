@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 const PHONE_REGEX = /^\+?[0-9]{8,15}$/;
-const REFERRAL_CODE_REGEX = /^[A-Z0-9]{6,10}$/;
 
 function eighteenYearsAgo(): Date {
   const d = new Date();
@@ -29,13 +28,6 @@ export const signUpSchema = z
     phoneNumber: z.string().trim().regex(PHONE_REGEX, "Numéro de téléphone invalide"),
     password: passwordSchema,
     confirmPassword: z.string(),
-    referralCode: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(REFERRAL_CODE_REGEX, "Code promo invalide")
-      .optional()
-      .or(z.literal("")),
     acceptTerms: z.literal(true, {
       error: "Vous devez accepter les conditions d'utilisation",
     }),

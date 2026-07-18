@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, MailCheck } from "lucide-react";
 
@@ -35,7 +35,6 @@ const OTP_ERROR_MESSAGES: Record<string, string> = {
 
 export function InscriptionForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [pendingEmail, setPendingEmail] = React.useState<string | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
 
@@ -130,7 +129,6 @@ export function InscriptionForm() {
       phoneNumber: "",
       password: "",
       confirmPassword: "",
-      referralCode: searchParams.get("ref")?.toUpperCase() ?? "",
       acceptTerms: undefined as unknown as true,
     },
   });
@@ -363,25 +361,6 @@ export function InscriptionForm() {
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="referralCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code promo (facultatif)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex : 3G8J8GDQ"
-                      className="uppercase"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}

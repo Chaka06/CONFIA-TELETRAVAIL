@@ -24,7 +24,6 @@ export async function POST(request: Request) {
       dateOfBirth: parsed.data.dateOfBirth,
       city: parsed.data.city,
       phoneNumber: parsed.data.phoneNumber,
-      referralCode: parsed.data.referralCode || null,
     });
 
     return NextResponse.json({ success: true });

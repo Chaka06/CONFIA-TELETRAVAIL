@@ -34,7 +34,6 @@ const BASE_INPUT = {
   dateOfBirth: "1995-01-01",
   city: "Abidjan",
   phoneNumber: "+2250700009999",
-  referralCode: null as string | null,
 };
 
 /** Récupère le code à 6 chiffres du dernier e-mail envoyé à cette adresse via Mailpit. */
