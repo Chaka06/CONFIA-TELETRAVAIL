@@ -1,7 +1,8 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 
 import { getServerEnv } from "@/lib/env";
+import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
 import type {
   PaymentProvider,
   PaymentSession,
@@ -143,11 +144,7 @@ class GeniusPayProvider implements PaymentProvider {
     const signedData = `${timestampHeader}.${rawBody}`;
     const expected = createHmac("sha256", this.env.GENIUS_PAY_WEBHOOK_SECRET).update(signedData, "utf8").digest("hex");
 
-    const expectedBuffer = Buffer.from(expected, "hex");
-    const receivedBuffer = Buffer.from(signatureHeader, "hex");
-    if (expectedBuffer.length !== receivedBuffer.length) return false;
-
-    return timingSafeEqual(expectedBuffer, receivedBuffer);
+    return timingSafeStringEqual(expected, signatureHeader, "hex");
   }
 
   parseWebhookEvent(rawBody: string): PaymentWebhookEvent {
