@@ -55,12 +55,7 @@ async function sendTelegramMessage(text: string): Promise<void> {
 }
 
 /**
- * À chaque nouvelle adhésion payée (confirmation d'un dépôt d'entrée), y
- * compris avant que le panier soit plein : annonce le nouveau compte de
- * membres pour la formule concernée.
- */
-/**
- * Barre de progression textuelle sur 10 blocs (ex: "██████░░░░"), pour un
+ * Barre de progression textuelle sur 10 blocs (ex: "▰▰▰▰▰▰░░░░"), pour un
  * repère visuel immédiat du remplissage sans avoir à lire les chiffres.
  */
 export function progressBar(count: number, capacity: number): string {
@@ -68,6 +63,40 @@ export function progressBar(count: number, capacity: number): string {
   return "▰".repeat(filled) + "▱".repeat(10 - filled);
 }
 
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/**
+ * Relances "premier arrivé, premier servi" — ton ivoirien assumé, c'est un
+ * groupe communautaire, pas une notif bancaire. Piochées au hasard pour ne
+ * pas lasser à force de répétition.
+ */
+const JOIN_ENCOURAGEMENTS = [
+  "⚡️ <i>Premier arrivé, premier servi ! Faut pas dormir sur la natte 😴</i>",
+  "🔥 <i>Ça bouge sérieux ici, on est ensemble ! Chope ta place avant que ça parte</i> 🏃💨",
+  "👀 <i>Encore quelques places, wesh la famille ! Fais vite fais vite</i> ⏱️",
+  "💪 <i>Y'a pas drap, viens comme tu es — mais viens vite quand même</i> 😉",
+] as const;
+
+/** Exposée pour la commande /paniers du webhook (même ton, même relance). */
+export function pickJoinEncouragement(): string {
+  return pickRandom(JOIN_ENCOURAGEMENTS);
+}
+
+const WIN_CELEBRATIONS = [
+  "🎉 Aiyééé, ambiance dans la cour ! On enjaille grave 🥳",
+  "🙌 Nickel chrome, c'est carré ! Le nzassa est bien mérité 💸",
+  "🎊 Ça c'est du sérieux, félicitations champion(ne) ! Profite bien 🙏",
+  "🥳 Deuga confirmé ! Bravo, que ça continue comme ça 🔥",
+] as const;
+
+/**
+ * À chaque nouvelle adhésion payée (confirmation d'un dépôt d'entrée), y
+ * compris avant que le panier soit plein : annonce le nouveau compte de
+ * membres pour la formule concernée, avec une relance pour attirer les
+ * prochains — premier arrivé, premier servi.
+ */
 export async function notifyBasketMemberJoined(params: {
   basketLabel: string;
   memberCount: number;
@@ -75,7 +104,8 @@ export async function notifyBasketMemberJoined(params: {
 }) {
   await sendTelegramMessage(
     `👤 <b>Nouveau membre</b> dans le <b>${escapeTelegramHtml(params.basketLabel)}</b>\n` +
-      `${progressBar(params.memberCount, params.capacity)} <i>${params.memberCount}/${params.capacity} membres</i>`
+      `${progressBar(params.memberCount, params.capacity)} <i>${params.memberCount}/${params.capacity} membres</i>\n\n` +
+      pickRandom(JOIN_ENCOURAGEMENTS)
   );
 }
 
@@ -104,6 +134,7 @@ export async function notifyPayoutReady(params: { basketLabel: string; firstName
     `🎉 <b>Panier complet !</b> 🎉\n\n` +
       `📦 ${escapeTelegramHtml(params.basketLabel)}\n` +
       `🏆 Gagnant(e) : <b>${escapeTelegramHtml(params.firstName)}</b>\n` +
-      `💰 Montant à verser : <b>${formatFcfa(params.amount)}</b>`
+      `💰 Montant à verser : <b>${formatFcfa(params.amount)}</b>\n\n` +
+      pickRandom(WIN_CELEBRATIONS)
   );
 }
