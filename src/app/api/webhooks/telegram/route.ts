@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
-import { escapeTelegramHtml, sendTelegramMessageTo } from "@/lib/telegram";
+import { escapeTelegramHtml, progressBar, sendTelegramMessageTo } from "@/lib/telegram";
 import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
 
 export const maxDuration = 15;
 
 const HELP_TEXT =
-  "Commandes disponibles :\n" +
-  "/paniers — remplissage actuel des 4 formules\n" +
-  "/gagnant — dernier gagnant connu\n" +
-  "/aide — cette liste";
+  "🤖 <b>Confssa Tontine — Commandes</b>\n\n" +
+  "💰 /paniers — <i>remplissage des 4 formules</i>\n" +
+  "🏆 /gagnant — <i>dernier gagnant connu</i>\n" +
+  "❓ /aide — <i>cette liste</i>";
 
 /**
  * Webhook des mises à jour Telegram (messages reçus dans le groupe).
@@ -68,10 +68,18 @@ export async function POST(request: Request) {
       if (!(i.basket_type_id in filledCount)) filledCount[i.basket_type_id] = i.member_count;
     }
 
-    const lines = (basketTypes ?? []).map(
-      (bt) => `• <b>${escapeTelegramHtml(bt.label)}</b> : ${filledCount[bt.id] ?? 0}/${bt.capacity} membres`
-    );
-    await sendTelegramMessageTo(chatId, lines.length > 0 ? lines.join("\n") : "Aucun panier actif pour le moment.");
+    const lines = (basketTypes ?? []).map((bt) => {
+      const count = filledCount[bt.id] ?? 0;
+      return (
+        `🔸 <b>${escapeTelegramHtml(bt.label)}</b>\n` +
+        `${progressBar(count, bt.capacity)} <i>${count}/${bt.capacity} membres</i>`
+      );
+    });
+    const body =
+      lines.length > 0
+        ? `💰 <b>Paniers en cours</b>\n\n${lines.join("\n\n")}`
+        : "😴 <i>Aucun panier actif pour le moment.</i>";
+    await sendTelegramMessageTo(chatId, body);
   } else if (command === "/gagnant") {
     const { data: payout } = await admin
       .from("tontine_payouts")
@@ -83,14 +91,19 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!payout) {
-      await sendTelegramMessageTo(chatId, "Aucun gagnant pour le moment.");
+      await sendTelegramMessageTo(chatId, "😴 <i>Aucun gagnant pour le moment.</i>");
     } else {
       const basketLabel = payout.tontine_basket_instances?.tontine_basket_types?.label ?? "Panier";
       const firstName = payout.tontine_memberships?.profiles?.first_name ?? "Un membre";
+      const statusEmoji = payout.status === "paid" ? "✅" : "⏳";
       const statusNote = payout.status === "paid" ? "déjà versé" : "en cours de versement";
       await sendTelegramMessageTo(
         chatId,
-        `🏆 Dernier gagnant : <b>${escapeTelegramHtml(firstName)}</b> sur le <b>${escapeTelegramHtml(basketLabel)}</b> — ${formatFcfa(Number(payout.amount))} (${statusNote}).`
+        `🏆 <b>Dernier gagnant</b>\n\n` +
+          `👤 <b>${escapeTelegramHtml(firstName)}</b>\n` +
+          `📦 Panier : ${escapeTelegramHtml(basketLabel)}\n` +
+          `💵 Montant : <b>${formatFcfa(Number(payout.amount))}</b>\n` +
+          `${statusEmoji} Statut : <i>${statusNote}</i>`
       );
     }
   } else if (command === "/aide" || command === "/start" || command === "/help") {

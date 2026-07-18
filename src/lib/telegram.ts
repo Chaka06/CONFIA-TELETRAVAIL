@@ -59,13 +59,23 @@ async function sendTelegramMessage(text: string): Promise<void> {
  * compris avant que le panier soit plein : annonce le nouveau compte de
  * membres pour la formule concernée.
  */
+/**
+ * Barre de progression textuelle sur 10 blocs (ex: "██████░░░░"), pour un
+ * repère visuel immédiat du remplissage sans avoir à lire les chiffres.
+ */
+export function progressBar(count: number, capacity: number): string {
+  const filled = Math.max(0, Math.min(10, Math.round((count / capacity) * 10)));
+  return "▰".repeat(filled) + "▱".repeat(10 - filled);
+}
+
 export async function notifyBasketMemberJoined(params: {
   basketLabel: string;
   memberCount: number;
   capacity: number;
 }) {
   await sendTelegramMessage(
-    `👤 <b>${escapeTelegramHtml(params.basketLabel)}</b> : ${params.memberCount}/${params.capacity} membres.`
+    `👤 <b>Nouveau membre</b> dans le <b>${escapeTelegramHtml(params.basketLabel)}</b>\n` +
+      `${progressBar(params.memberCount, params.capacity)} <i>${params.memberCount}/${params.capacity} membres</i>`
   );
 }
 
@@ -76,7 +86,10 @@ export async function notifyPayoutConfirmed(params: {
   joinUrl: string;
 }) {
   await sendTelegramMessage(
-    `💰 ${escapeTelegramHtml(params.firstName)} a été payé(e) : ${formatFcfa(params.amount)} sur le <b>${escapeTelegramHtml(params.basketLabel)}</b>.\nUne nouvelle place est ouverte pour retenter sa chance : ${params.joinUrl}`
+    `💸 <b>Paiement confirmé</b>\n\n` +
+      `👤 ${escapeTelegramHtml(params.firstName)} a reçu <b>${formatFcfa(params.amount)}</b>\n` +
+      `📦 Panier : <b>${escapeTelegramHtml(params.basketLabel)}</b>\n\n` +
+      `🔄 <i>Une nouvelle place est ouverte pour retenter sa chance :</i>\n${params.joinUrl}`
   );
 }
 
@@ -88,6 +101,9 @@ export async function notifyPayoutConfirmed(params: {
  */
 export async function notifyPayoutReady(params: { basketLabel: string; firstName: string; amount: number }) {
   await sendTelegramMessage(
-    `🎉 <b>${escapeTelegramHtml(params.basketLabel)}</b> est complet ! ${escapeTelegramHtml(params.firstName)} remporte ${formatFcfa(params.amount)} à verser.`
+    `🎉 <b>Panier complet !</b> 🎉\n\n` +
+      `📦 ${escapeTelegramHtml(params.basketLabel)}\n` +
+      `🏆 Gagnant(e) : <b>${escapeTelegramHtml(params.firstName)}</b>\n` +
+      `💰 Montant à verser : <b>${formatFcfa(params.amount)}</b>`
   );
 }
