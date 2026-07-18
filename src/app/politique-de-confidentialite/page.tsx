@@ -7,6 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité",
+  description: "Comment Confssa collecte, utilise et protège vos données personnelles.",
+  alternates: { canonical: "/politique-de-confidentialite" },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

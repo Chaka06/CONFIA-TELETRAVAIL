@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { createPublicClient } from "@/lib/supabase/public";
 import { SiteHeader } from "@/components/landing/site-header";
 import { Hero } from "@/components/landing/hero";
@@ -6,6 +8,10 @@ import { BasketTypesSection } from "@/components/landing/basket-types-section";
 import { SecuritySection } from "@/components/landing/security-section";
 import { FinalCta } from "@/components/landing/final-cta";
 import { SiteFooter } from "@/components/landing/site-footer";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export const revalidate = 300;
 

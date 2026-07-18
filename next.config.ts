@@ -1,6 +1,23 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        // www.confssa.com et confssa.com servaient tous les deux un 200
+        // identique sans redirection entre les deux — contenu dupliqué aux
+        // yeux de Google (Search Console le signale comme "canonique non
+        // sélectionné par l'utilisateur"). confssa.com (sans www) est le
+        // domaine canonique utilisé partout ailleurs (métadonnées,
+        // sitemap, liens envoyés par e-mail) : www redirige définitivement
+        // vers lui, chemin et paramètres conservés.
+        source: "/:path*",
+        has: [{ type: "host", value: "www.confssa.com" }],
+        destination: "https://confssa.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

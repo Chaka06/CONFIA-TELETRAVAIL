@@ -7,6 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
   title: "Conditions d'utilisation",
+  description: "Conditions générales d'utilisation de la plateforme de tontine en ligne Confssa.",
+  alternates: { canonical: "/conditions-utilisation" },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

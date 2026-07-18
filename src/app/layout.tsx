@@ -44,6 +44,18 @@ export const metadata: Metadata = {
   },
 };
 
+// Statique et entièrement maîtrisé (aucune donnée utilisateur) : le
+// remplacement de "<" reste une précaution de défense en profondeur,
+// conforme au modèle recommandé par Next.js pour le JSON-LD.
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Confssa",
+  url: APP_BASE_URL,
+  logo: `${APP_BASE_URL}/logo.png`,
+  description: DESCRIPTION,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,6 +68,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

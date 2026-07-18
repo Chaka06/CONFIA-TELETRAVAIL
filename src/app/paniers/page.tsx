@@ -10,7 +10,12 @@ import { JoinBasketButton } from "@/components/tontine/join-basket-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const metadata: Metadata = { title: "Paniers disponibles" };
+export const metadata: Metadata = {
+  title: "Paniers disponibles",
+  description:
+    "4 formules de tontine en ligne à 1000, 3000, 5000 ou 10 000 FCFA. Rejoignez un panier de 20 membres avec un dépôt unique et suivez sa progression en temps réel.",
+  alternates: { canonical: "/paniers" },
+};
 export const revalidate = 30;
 
 export default async function PaniersPage() {
