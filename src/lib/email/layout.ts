@@ -118,7 +118,7 @@ export function renderEmailLayout(params: {
                   <tr>
                     <td align="center">
                       <a href="${TELEGRAM_GROUP_URL}" style="display:inline-block; padding: 10px 20px; font-size: 13px; font-weight: 600; color:${BRAND_NAVY}; background-color:#ffffff; border: 1px solid ${BRAND_NAVY}; text-decoration:none;">
-                        💬 Rejoindre le groupe Telegram
+                        Rejoindre le groupe Telegram
                       </a>
                     </td>
                   </tr>
