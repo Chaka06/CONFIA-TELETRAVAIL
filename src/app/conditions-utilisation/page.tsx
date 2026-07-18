@@ -46,7 +46,8 @@ export default function ConditionsUtilisationPage() {
                 l&apos;utilisation de la plateforme Confssa (le « Service »), qui organise des tontines
                 en ligne : des paniers regroupant 20 membres, où chacun verse un dépôt unique à
                 l&apos;adhésion et où, dès que le panier est complet, le premier membre arrivé remporte
-                l&apos;intégralité du gain.
+                95% du montant total collecté, les 5% restants étant conservés par Confssa au titre de
+                sa commission de service.
               </p>
               <p>
                 En créant un compte, l&apos;Utilisateur reconnaît avoir lu, compris et accepté sans
@@ -87,10 +88,11 @@ export default function ConditionsUtilisationPage() {
               </p>
               <p>
                 Un panier compte 20 membres. Dès que la 20ᵉ place est occupée et payée, le panier est
-                complet : l&apos;intégralité du gain est aussitôt attribuée au membre arrivé en premier
-                dans ce panier. Les autres membres ne remportent pas ce panier et peuvent rejoindre un
-                nouveau panier de la même formule pour retenter leur chance. Un panier complet est
-                définitivement clos ; il n&apos;est ni rejoué ni réutilisé.
+                complet : 95% du montant total collecté est aussitôt attribué au membre arrivé en
+                premier dans ce panier, les 5% restants étant conservés par Confssa. Les autres membres
+                ne remportent pas ce panier et peuvent rejoindre un nouveau panier de la même formule
+                pour retenter leur chance. Un panier complet est définitivement clos ; il n&apos;est ni
+                rejoué ni réutilisé.
               </p>
               <p>
                 Un dépôt d&apos;entrée réservé mais non réglé dans un délai de 24 heures est
@@ -109,6 +111,11 @@ export default function ConditionsUtilisationPage() {
                 tiers agréé. Confssa ne collecte ni ne conserve aucune donnée de carte bancaire ou de
                 compte de paiement : ces informations transitent exclusivement par l&apos;infrastructure
                 sécurisée du prestataire de paiement.
+              </p>
+              <p>
+                Confssa conserve une commission de 5% sur le montant total collecté sur chaque panier ;
+                le membre gagnant reçoit les 95% restants. Ce taux peut être modifié pour de nouvelles
+                formules, sous réserve d&apos;en informer les Utilisateurs.
               </p>
               <p>
                 Les gains sont versés manuellement par l&apos;équipe d&apos;administration vers le moyen de

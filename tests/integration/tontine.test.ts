@@ -123,7 +123,7 @@ describe("Tontine — 20 paiements remplissent le panier et déclenchent le gain
         // 20e paiement : gain déclenché immédiatement, gagnant = 1er arrivé.
         expect(confirm!.became_full).toBe(true);
         expect(confirm!.winner_user_id).toBe(users[0].id);
-        expect(Number(confirm!.payout_amount)).toBe(20000);
+        expect(Number(confirm!.payout_amount)).toBe(19000); // 20 000 - 5% de commission plateforme
         expect(confirm!.beneficiary_token).toBeTruthy();
       }
     }
@@ -155,7 +155,7 @@ describe("Tontine — 20 paiements remplissent le panier et déclenchent le gain
       .eq("basket_instance_id", instanceId);
     expect(payouts).toHaveLength(1);
     expect(payouts![0].membership_id).toBe(firstMembershipId);
-    expect(Number(payouts![0].amount)).toBe(20000);
+    expect(Number(payouts![0].amount)).toBe(19000); // 20 000 - 5% de commission plateforme
     expect(payouts![0].status).toBe("pending");
 
     // Un dépôt d'entrée unique par membre, tous payés (pas de cotisation étalée).
@@ -482,5 +482,28 @@ describe("Tontine — sécurité : un membre connecté peut relire sa propre cot
       .single();
     expect(membershipError).toBeNull();
     expect(membership?.status).toBe("active");
+  });
+});
+
+describe("Tontine — commission plateforme de 5% sur le gain de chaque formule", () => {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  it("payout_amount = montant total collecté x 95%, pour les 4 formules", async () => {
+    const { data: basketTypes } = await admin
+      .from("tontine_basket_types")
+      .select("contribution_amount, capacity, contributions_per_round, commission_rate, payout_amount")
+      .order("contribution_amount");
+
+    expect(basketTypes).toHaveLength(4);
+    for (const bt of basketTypes!) {
+      expect(Number(bt.commission_rate)).toBe(0.05);
+      const totalCollected = Number(bt.contribution_amount) * bt.capacity * bt.contributions_per_round;
+      const expectedPayout = Math.round(totalCollected * 0.95 * 100) / 100;
+      expect(Number(bt.payout_amount)).toBe(expectedPayout);
+      // Vérifie concrètement que le gagnant reçoit 95%, jamais 100%.
+      expect(Number(bt.payout_amount)).toBeLessThan(totalCollected);
+    }
   });
 });

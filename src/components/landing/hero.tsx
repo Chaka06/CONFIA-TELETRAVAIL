@@ -21,8 +21,8 @@ export function Hero() {
 
             <p className="mt-5 text-balance text-lg leading-relaxed text-muted-foreground">
               Confssa organise votre tontine en ligne : rejoignez un panier de 20 membres avec un
-              dépôt unique. Dès que le panier est complet, le premier arrivé remporte l&apos;intégralité
-              du gain — premier arrivé, premier payé.
+              dépôt unique. Dès que le panier est complet, le premier arrivé remporte 95% du montant
+              total — premier arrivé, premier payé.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">

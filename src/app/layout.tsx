@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
 const TITLE = "Confssa — Tontine en ligne";
 const DESCRIPTION =
-  "Confssa organise votre tontine en ligne : rejoignez un panier de 20 membres avec un dépôt unique. Dès que le panier est complet, le premier arrivé remporte l'intégralité du gain.";
+  "Confssa organise votre tontine en ligne : rejoignez un panier de 20 membres avec un dépôt unique. Dès que le panier est complet, le premier arrivé remporte 95% du montant total.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_BASE_URL),

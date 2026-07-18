@@ -4,7 +4,7 @@ const BADGES = [
   {
     icon: Users,
     title: "20 membres par panier",
-    description: "Un seul dépôt à l'adhésion. Dès que le panier est complet, le premier arrivé remporte tout.",
+    description: "Un seul dépôt à l'adhésion. Dès que le panier est complet, le premier arrivé remporte 95% du montant total.",
   },
   {
     icon: Timer,

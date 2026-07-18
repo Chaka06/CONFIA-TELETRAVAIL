@@ -329,6 +329,7 @@ export type Database = {
       tontine_basket_types: {
         Row: {
           capacity: number
+          commission_rate: number
           contribution_amount: number
           contributions_per_round: number
           created_at: string
@@ -341,6 +342,7 @@ export type Database = {
         }
         Insert: {
           capacity?: number
+          commission_rate?: number
           contribution_amount: number
           contributions_per_round?: number
           created_at?: string
@@ -353,6 +355,7 @@ export type Database = {
         }
         Update: {
           capacity?: number
+          commission_rate?: number
           contribution_amount?: number
           contributions_per_round?: number
           created_at?: string

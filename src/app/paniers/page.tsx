@@ -58,7 +58,7 @@ export default async function PaniersPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Choisissez votre panier</h1>
             <p className="mt-3 text-muted-foreground">
               20 membres par panier, un seul dépôt à l&apos;adhésion. Dès que le panier est complet, le premier
-              arrivé remporte la totalité.
+              arrivé remporte 95% du montant total.
             </p>
           </div>
 

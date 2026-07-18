@@ -22,7 +22,7 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
           <h2 className="text-3xl font-semibold tracking-tight text-foreground">Comment fonctionne la tontine</h2>
           <p className="mt-3 text-muted-foreground">
             Choisissez un panier, versez un dépôt unique, et dès que 20 membres l&apos;ont rejoint, le premier
-            arrivé remporte la totalité.
+            arrivé remporte 95% du montant total.
           </p>
         </div>
 
@@ -50,10 +50,10 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
           </li>
           <li className="rounded-xl border border-border p-5">
             <span className="text-xs font-semibold text-primary">04</span>
-            <h3 className="mt-1 text-sm font-semibold text-foreground">Le gagnant reçoit la totalité</h3>
+            <h3 className="mt-1 text-sm font-semibold text-foreground">Le gagnant reçoit son gain</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Il indique son moyen de paiement et reçoit le gain complet. Chacun peut rejoindre un nouveau panier
-              pour retenter.
+              Il indique son moyen de paiement et reçoit 95% du montant total collecté. Chacun peut rejoindre un
+              nouveau panier pour retenter.
             </p>
           </li>
         </ol>
