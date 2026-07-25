@@ -628,6 +628,15 @@ export type Database = {
           winner_user_id: string
         }[]
       }
+      fn_claim_signup_otp_attempt: {
+        Args: { p_code_id: string }
+        Returns: {
+          attempts: number
+          code_hash: string
+          expires_at: string
+          max_attempts: number
+        }[]
+      }
       fn_daily_tontine_sweep: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }

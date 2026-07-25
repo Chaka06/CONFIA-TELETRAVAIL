@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { signupOtpEmail } from "@/lib/email/templates";
+import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
 
 /**
  * Inscription par code OTP entièrement maison : Supabase Auth ne compose ni
@@ -149,7 +150,7 @@ export async function verifySignupOtp(email: string, code: string): Promise<{ to
 
   const { data: row } = await admin
     .from("email_verification_codes")
-    .select("id, code_hash, attempts, max_attempts, expires_at")
+    .select("id")
     .eq("user_id", profile.id)
     .eq("purpose", "signup")
     .is("consumed_at", null)
@@ -158,11 +159,21 @@ export async function verifySignupOtp(email: string, code: string): Promise<{ to
     .maybeSingle();
 
   if (!row) throw new SignupOtpError("no_pending_code");
-  if (new Date(row.expires_at).getTime() < Date.now()) throw new SignupOtpError("expired");
-  if (row.attempts >= row.max_attempts) throw new SignupOtpError("too_many_attempts");
 
-  if (row.code_hash !== hashCode(code)) {
-    await admin.from("email_verification_codes").update({ attempts: row.attempts + 1 }).eq("id", row.id);
+  // Réservation atomique d'une tentative (incrément + vérification du
+  // plafond dans la même écriture conditionnelle, via fn_claim_signup_otp_
+  // attempt) : un lire-puis-écrire en deux temps permettrait à des requêtes
+  // envoyées en parallèle de toutes lire "attempts < max_attempts" avant
+  // qu'aucune écriture n'atterrisse, contournant la limite de tentatives.
+  const { data: claimed, error: claimError } = await admin
+    .rpc("fn_claim_signup_otp_attempt", { p_code_id: row.id })
+    .maybeSingle();
+
+  if (claimError) throw new SignupOtpError("unexpected_error");
+  if (!claimed) throw new SignupOtpError("too_many_attempts");
+  if (new Date(claimed.expires_at).getTime() < Date.now()) throw new SignupOtpError("expired");
+
+  if (!timingSafeStringEqual(claimed.code_hash, hashCode(code))) {
     throw new SignupOtpError("invalid_code");
   }
 

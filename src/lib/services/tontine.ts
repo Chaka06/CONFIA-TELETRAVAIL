@@ -88,6 +88,20 @@ export async function initiateContributionPayment(
   if (contribError || !contribution) {
     throw new TontineServiceError("contribution_not_found");
   }
+
+  // Vérification explicite du propriétaire, en défense en profondeur de la
+  // RLS : ne jamais se reposer uniquement sur la policy de la table pour
+  // empêcher un utilisateur de déclencher le paiement de la cotisation d'un
+  // autre (IDOR via un id de cotisation deviné/énuméré). Même message
+  // d'erreur que "introuvable" pour ne pas confirmer l'existence de l'id à
+  // un attaquant.
+  const ownerId = Array.isArray(contribution.tontine_memberships)
+    ? contribution.tontine_memberships[0]?.user_id
+    : contribution.tontine_memberships?.user_id;
+  if (ownerId !== params.userId) {
+    throw new TontineServiceError("contribution_not_found");
+  }
+
   if (contribution.status !== "pending") {
     throw new TontineServiceError("contribution_not_pending");
   }
