@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, email")
+    .select("first_name, last_name")
     .eq("id", user.id)
     .single();
 
@@ -63,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="hidden md:block" />
           <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <UserMenu firstName={profile.first_name} lastName={profile.last_name} email={profile.email} />
+            <UserMenu firstName={profile.first_name} lastName={profile.last_name} email={user.email ?? ""} />
           </div>
         </header>
 

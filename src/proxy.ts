@@ -42,9 +42,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isAuthPage && hasSession) {
-    return NextResponse.redirect(new URL("/tableau-de-bord", request.url));
-  }
+  // Pas de rebond optimiste isAuthPage -> /tableau-de-bord ici : un cookie
+  // sb-*-auth-token présent ne garantit ni sa validité ni son appartenance
+  // au projet Supabase courant (ex. reliquat d'un ancien projet après
+  // migration). Rediriger sur cette seule présence recrée la boucle
+  // infinie /connexion <-> /tableau-de-bord dès que la vérification
+  // autoritaire côté page échoue. La page /connexion fait elle-même cette
+  // vérification authoritaire (getUser()) et ne redirige que si elle réussit.
 
   return NextResponse.next();
 }
