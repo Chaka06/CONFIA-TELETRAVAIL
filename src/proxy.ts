@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/tableau-de-bord", "/pouri"];
+// /pouri gère sa propre authentification (formulaire dédié dans son layout,
+// jamais /connexion) : volontairement absent d'ici.
+const PROTECTED_PREFIXES = ["/tableau-de-bord"];
 const AUTH_PREFIXES = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 
 /**

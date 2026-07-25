@@ -22,12 +22,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name")
+    .select("first_name, last_name, role")
     .eq("id", user.id)
     .single();
 
   if (!profile) {
     redirect("/connexion");
+  }
+
+  // Un compte admin/super_admin n'a pas de "compte particulier" : il n'a
+  // rien à faire dans l'espace utilisateur, uniquement dans /pouri.
+  if (profile.role === "admin" || profile.role === "super_admin") {
+    redirect("/pouri");
   }
 
   const sidebarContent = (

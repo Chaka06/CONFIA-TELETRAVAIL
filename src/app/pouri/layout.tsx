@@ -1,16 +1,39 @@
-import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { createClient } from "@/lib/supabase/server";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { Badge } from "@/components/ui/badge";
+import { AdminConnexionForm } from "./admin-connexion-form";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { profile } = await requireAdmin();
+  // /pouri est un espace à part entière : pas de compte "particulier"
+  // (utilisateur normal) associé, pas de passage par /connexion. Un visiteur
+  // non authentifié ou non-admin voit directement ce formulaire de connexion
+  // dédié, jamais une redirection vers l'espace utilisateur.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("id, role, first_name, last_name")
+        .eq("id", user.id)
+        .single()
+    : { data: null };
+
+  const isAdmin = !!profile && (profile.role === "admin" || profile.role === "super_admin");
+
+  if (!isAdmin) {
+    return <AdminConnexionForm />;
+  }
+
+  const adminProfile = { ...profile, email: user!.email ?? "" };
 
   const sidebarContent = (
     <>
@@ -25,12 +48,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <AdminSidebarNav />
       </div>
       <div className="space-y-1 border-t border-zinc-800 p-3">
-        <Link
-          href="/tableau-de-bord"
-          className="block rounded-lg px-3 py-2 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-        >
-          ← Retour à mon compte
-        </Link>
         <SignOutButton className="text-red-400/80 hover:bg-red-500/10 hover:text-red-400" />
       </div>
     </>
@@ -56,7 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </MobileSidebar>
             </div>
             <Badge variant="outline" className="hidden uppercase tracking-wide sm:inline-flex">
-              {profile.role === "super_admin" ? "Super administrateur" : "Administrateur"}
+              {adminProfile.role === "super_admin" ? "Super administrateur" : "Administrateur"}
             </Badge>
             <Badge variant="outline" className="uppercase tracking-wide sm:hidden">
               Admin
@@ -64,7 +81,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <UserMenu firstName={profile.first_name} lastName={profile.last_name} email={profile.email} />
+            <UserMenu firstName={adminProfile.first_name} lastName={adminProfile.last_name} email={adminProfile.email} />
           </div>
         </header>
 
