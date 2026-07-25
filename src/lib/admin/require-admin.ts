@@ -22,7 +22,7 @@ export async function requireAdmin() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, role, first_name, last_name, email")
+    .select("id, role, first_name, last_name")
     .eq("id", user.id)
     .single();
 
@@ -30,7 +30,7 @@ export async function requireAdmin() {
     redirect("/tableau-de-bord");
   }
 
-  return { supabase, profile };
+  return { supabase, profile: { ...profile, email: user.email ?? "" } };
 }
 
 export async function requireSuperAdmin() {
