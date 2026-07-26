@@ -118,25 +118,15 @@ function formatBasketStatusLine(label: string, count: number, capacity: number):
 
 /** Récupère et formate le remplissage des formules actives, prêt à afficher. */
 export async function fetchBasketStatusLines(admin: ReturnType<typeof createAdminClient>): Promise<string[]> {
-  const [{ data: basketTypes }, { data: instances }] = await Promise.all([
-    admin
-      .from("tontine_basket_types")
-      .select("id, label, capacity")
-      .eq("is_active", true)
-      .order("contribution_amount"),
-    admin
-      .from("tontine_basket_instances")
-      .select("basket_type_id, member_count, created_at")
-      .eq("status", "filling")
-      .order("created_at", { ascending: true }),
-  ]);
+  const { data: paniers } = await admin
+    .from("paniers_public")
+    .select("formule_amount, capacity, member_count")
+    .eq("mode", "normal")
+    .order("formule_amount");
 
-  const filledCount: Record<string, number> = {};
-  for (const i of instances ?? []) {
-    if (!(i.basket_type_id in filledCount)) filledCount[i.basket_type_id] = i.member_count;
-  }
-
-  return (basketTypes ?? []).map((bt) => formatBasketStatusLine(bt.label, filledCount[bt.id] ?? 0, bt.capacity));
+  return (paniers ?? [])
+    .filter((p): p is typeof p & { formule_amount: number; capacity: number } => p.formule_amount != null && p.capacity != null)
+    .map((p) => formatBasketStatusLine(`Panier ${formatFcfa(p.formule_amount)}`, p.member_count ?? 0, p.capacity));
 }
 
 /**

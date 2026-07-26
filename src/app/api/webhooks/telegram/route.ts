@@ -57,29 +57,31 @@ export async function POST(request: Request) {
         : "😴 <i>Aucun panier actif pour le moment.</i>";
     await sendTelegramMessageTo(chatId, body);
   } else if (command === "/gagnant") {
-    const { data: payout } = await admin
-      .from("tontine_payouts")
-      .select(
-        "amount, status, tontine_basket_instances(tontine_basket_types(label)), tontine_memberships(profiles(first_name))"
-      )
-      .order("created_at", { ascending: false })
+    const { data: lastClaim } = await admin
+      .from("payout_claims")
+      .select("paid_at, panier_memberships(user_id, panier_id)")
+      .eq("status", "paid")
+      .order("paid_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!payout) {
+    if (!lastClaim?.panier_memberships) {
       await sendTelegramMessageTo(chatId, "😴 <i>Aucun gagnant pour le moment.</i>");
     } else {
-      const basketLabel = payout.tontine_basket_instances?.tontine_basket_types?.label ?? "Panier";
-      const firstName = payout.tontine_memberships?.profiles?.first_name ?? "Un membre";
-      const statusEmoji = payout.status === "paid" ? "✅" : "⏳";
-      const statusNote = payout.status === "paid" ? "déjà versé" : "en cours de versement";
+      const { user_id: userId, panier_id: panierId } = lastClaim.panier_memberships;
+      const [{ data: profile }, { data: panier }] = await Promise.all([
+        admin.from("profiles").select("first_name").eq("id", userId).single(),
+        admin.from("paniers_public").select("formule_amount, gain_net_amount").eq("id", panierId).single(),
+      ]);
+      const firstName = profile?.first_name ?? "Un membre";
+      const basketLabel = panier ? `Panier ${formatFcfa(panier.formule_amount ?? 0)}` : "Panier";
       await sendTelegramMessageTo(
         chatId,
         `🏆 <b>Dernier gagnant</b>\n\n` +
           `👤 <b>${escapeTelegramHtml(firstName)}</b>\n` +
-          `📦 Panier : ${escapeTelegramHtml(basketLabel)}\n` +
-          `💵 Montant : <b>${formatFcfa(Number(payout.amount))}</b>\n` +
-          `${statusEmoji} Statut : <i>${statusNote}</i>`
+          `📦 ${escapeTelegramHtml(basketLabel)}\n` +
+          `💵 Montant : <b>${formatFcfa(panier?.gain_net_amount ?? 0)}</b>\n` +
+          `✅ <i>Déjà versé</i>`
       );
     }
   } else if (command === "/aide" || command === "/start" || command === "/help") {

@@ -53,10 +53,10 @@ export function payoutReadyEmail(params: { basketLabel: string; amount: number; 
       title: "Votre gain est prêt",
       paragraphs: [
         `Le ${basketLabel} est complet et vous êtes le premier arrivé : vous remportez <strong>${formatFcfa(params.amount)}</strong>.`,
-        "Cliquez sur le bouton ci-dessous pour indiquer votre numéro et le moyen de paiement (Orange Money, Wave, MTN Money ou Moov Money) sur lequel vous souhaitez le recevoir.",
+        "Connectez-vous à votre tableau de bord pour indiquer votre numéro et le moyen de paiement (Orange Money, Wave, MTN Money ou Moov Money) sur lequel vous souhaitez le recevoir.",
       ],
       button: { label: "Recevoir mon gain", url: params.claimUrl },
-      footnote: "Ce lien est personnel, ne le partagez avec personne.",
+      footnote: "Vos coordonnées de paiement ne sont jamais partagées publiquement.",
     }),
   };
 }

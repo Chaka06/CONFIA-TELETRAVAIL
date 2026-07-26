@@ -21,29 +21,47 @@ export default async function AdminUsersPage({
   const { q } = await searchParams;
   const admin = createAdminClient();
 
-  let query = admin
-    .from("profiles")
-    .select("id, first_name, last_name, email, role, status, created_at, tontine_memberships(status)")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  // profiles n'a ni colonne email ni colonne status (bannissement) : ces
+  // deux informations vivent dans auth.users, pas exposé à PostgREST — on
+  // les récupère via l'API admin et on recoupe côté serveur avec profiles.
+  const [{ data: profiles }, { data: authUsers }, { data: activeMemberships }] = await Promise.all([
+    admin.from("profiles").select("id, first_name, last_name, role, created_at").order("created_at", { ascending: false }),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+    admin.from("panier_memberships").select("user_id").eq("status", "active"),
+  ]);
 
-  if (q) {
-    // Les caractères `,()` ont un sens syntaxique dans le filtre PostgREST
-    // `.or()` (séparateur / groupement) : on les retire pour qu'une valeur
-    // de recherche ne puisse jamais injecter une condition supplémentaire
-    // (ex : cibler un rôle) en dehors du champ de recherche prévu.
-    const safeQ = q.replace(/[,()]/g, "");
-    query = query.or(`first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`);
+  const authById = new Map((authUsers?.users ?? []).map((u) => [u.id, u]));
+  const activeCountByUser = new Map<string, number>();
+  for (const m of activeMemberships ?? []) {
+    activeCountByUser.set(m.user_id, (activeCountByUser.get(m.user_id) ?? 0) + 1);
   }
 
-  const { data: users } = await query;
+  let users = (profiles ?? []).map((p) => {
+    const authUser = authById.get(p.id);
+    return {
+      ...p,
+      email: authUser?.email ?? "",
+      banned: !!authUser?.banned_until && new Date(authUser.banned_until) > new Date(),
+      activeMemberships: activeCountByUser.get(p.id) ?? 0,
+    };
+  });
+
+  if (q) {
+    const needle = q.toLowerCase();
+    users = users.filter(
+      (u) =>
+        u.first_name.toLowerCase().includes(needle) ||
+        u.last_name.toLowerCase().includes(needle) ||
+        u.email.toLowerCase().includes(needle)
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Utilisateurs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {users?.length ?? 0} compte(s) affiché(s). Seul un super administrateur peut modifier les rôles.
+          {users.length} compte(s) affiché(s). Seul un super administrateur peut modifier les rôles.
         </p>
       </div>
 
@@ -71,13 +89,13 @@ export default async function AdminUsersPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(users ?? []).map((u) => (
+                {users.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell>
                       {u.first_name} {u.last_name}
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </TableCell>
-                    <TableCell>{u.tontine_memberships.filter((m) => m.status === "active").length}</TableCell>
+                    <TableCell>{u.activeMemberships}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(u.created_at).toLocaleDateString("fr-FR")}
                     </TableCell>
@@ -85,7 +103,7 @@ export default async function AdminUsersPage({
                       <div className="flex justify-end">
                         <UserRowControls
                           userId={u.id}
-                          status={u.status}
+                          banned={u.banned}
                           role={u.role}
                           canEditRole={profile.role === "super_admin"}
                         />

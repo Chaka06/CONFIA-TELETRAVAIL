@@ -11,28 +11,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STATUS_LABEL: Record<string, { label: string; className: string }> = {
-  filling: { label: "Remplissage", className: "bg-warning/10 text-warning" },
-  active: { label: "Complet — gain à confirmer", className: "bg-success/10 text-success" },
-  completed: { label: "Clôturé (gain versé)", className: "bg-primary/10 text-primary" },
-  paused: { label: "En pause (place libre)", className: "bg-destructive/10 text-destructive" },
-};
+const MODE_LABEL: Record<string, string> = { normal: "Normal", rush: "Rush" };
 
 export default async function AdminPaniersPage() {
   await requireAdmin();
   const admin = createAdminClient();
 
-  const { data: instances } = await admin
-    .from("tontine_basket_instances")
-    .select("id, status, member_count, created_at, filled_at, tontine_basket_types(label, capacity)")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  // Modèle "paiement unique" : un panier est une ligne persistante par
+  // formule/mode (pas d'instance jetable) — elle continue au cycle suivant
+  // (cycle_index) après chaque gain versé, plutôt que d'être recréée.
+  const { data: paniers } = await admin
+    .from("paniers")
+    .select("id, mode, formule_amount, capacity, member_count, cycle_index, filled_at, draw_at, created_at")
+    .order("mode")
+    .order("formule_amount");
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Paniers</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Tous les portefeuilles en cours, avec leur état de remplissage.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Tous les paniers, avec leur état de remplissage.</p>
       </div>
 
       <Card>
@@ -42,33 +40,34 @@ export default async function AdminPaniersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Formule</TableHead>
+                  <TableHead>Mode</TableHead>
                   <TableHead>Membres</TableHead>
-                  <TableHead>Créé le</TableHead>
-                  <TableHead>Complété le</TableHead>
+                  <TableHead>Cycle</TableHead>
+                  <TableHead>Tirage prévu</TableHead>
                   <TableHead className="text-right">Statut</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(instances ?? []).map((i) => {
-                  const statusInfo = STATUS_LABEL[i.status] ?? { label: i.status, className: "" };
-                  return (
-                    <TableRow key={i.id}>
-                      <TableCell>{i.tontine_basket_types?.label}</TableCell>
-                      <TableCell>
-                        {i.member_count} / {i.tontine_basket_types?.capacity}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(i.created_at).toLocaleDateString("fr-FR")}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {i.filled_at ? new Date(i.filled_at).toLocaleDateString("fr-FR") : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {(paniers ?? []).map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.formule_amount} FCFA</TableCell>
+                    <TableCell>{MODE_LABEL[p.mode] ?? p.mode}</TableCell>
+                    <TableCell>
+                      {p.member_count} / {p.capacity}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">#{p.cycle_index}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {p.draw_at ? new Date(p.draw_at).toLocaleString("fr-FR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {p.filled_at ? (
+                        <Badge className="bg-success/10 text-success">Complet</Badge>
+                      ) : (
+                        <Badge className="bg-warning/10 text-warning">Remplissage</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>

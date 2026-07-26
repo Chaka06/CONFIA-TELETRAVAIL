@@ -1,17 +1,17 @@
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatFcfa } from "@/lib/format";
-import { SettingRow } from "@/components/admin/setting-row";
+import { FormuleConfigRow } from "@/components/admin/formule-config-row";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminSettingsPage() {
   const { profile } = await requireAdmin();
   const admin = createAdminClient();
 
-  const [{ data: settings }, { data: basketTypes }] = await Promise.all([
-    admin.from("platform_settings").select("key, value, description").order("key"),
-    admin.from("tontine_basket_types").select("*").order("contribution_amount"),
-  ]);
+  const { data: formuleConfigs } = await admin
+    .from("formule_configs")
+    .select("mode, formule_amount, capacity, commission_bps, draw_delay_hours")
+    .order("mode")
+    .order("formule_amount");
 
   const isSuperAdmin = profile.role === "super_admin";
 
@@ -26,42 +26,22 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      {settings && settings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Paramètres généraux</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {settings.map((s) => (
-              <SettingRow
-                key={s.key}
-                settingKey={s.key}
-                initialValue={typeof s.value === "string" ? s.value : JSON.stringify(s.value)}
-                description={s.description}
-                readOnly={!isSuperAdmin}
-              />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader>
-          <CardTitle>Formules de portefeuille</CardTitle>
-          <CardDescription>
-            Les 4 paniers proposés (lecture seule ici — modification via la base de données par un
-            super administrateur, opération sensible).
-          </CardDescription>
+          <CardTitle>Formules de panier</CardTitle>
+          <CardDescription>Commission prélevée et délai avant tirage du gagnant, par formule.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {(basketTypes ?? []).map((bt) => (
-            <div key={bt.id} className="flex justify-between border-b border-border py-2 text-sm last:border-0">
-              <span className="font-medium">{bt.label}</span>
-              <span className="text-muted-foreground">
-                Dépôt {formatFcfa(bt.contribution_amount)} · {bt.capacity} places · gain{" "}
-                {formatFcfa(bt.payout_amount ?? 0)}
-              </span>
-            </div>
+        <CardContent>
+          {(formuleConfigs ?? []).map((fc) => (
+            <FormuleConfigRow
+              key={`${fc.mode}-${fc.formule_amount}`}
+              mode={fc.mode}
+              formuleAmount={fc.formule_amount}
+              capacity={fc.capacity}
+              commissionBps={fc.commission_bps}
+              drawDelayHours={fc.draw_delay_hours}
+              readOnly={!isSuperAdmin}
+            />
           ))}
         </CardContent>
       </Card>

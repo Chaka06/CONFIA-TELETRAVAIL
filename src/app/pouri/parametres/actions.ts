@@ -5,33 +5,33 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/admin/require-admin";
 import { logAdminAction } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Json } from "@/types/database";
 
-export async function adminUpdateSetting(key: string, rawValue: string) {
+export async function adminUpdateFormuleConfig(params: {
+  mode: "normal" | "rush";
+  formuleAmount: number;
+  commissionBps: number;
+  drawDelayHours: number;
+}) {
   const { profile } = await requireSuperAdmin();
   const admin = createAdminClient();
 
-  let value: Json;
-  try {
-    // Les valeurs sont stockées en jsonb ; un nombre ou "true"/"false" est
-    // interprété tel quel, sinon la valeur est traitée comme une chaîne.
-    value = JSON.parse(rawValue);
-  } catch {
-    value = rawValue;
-  }
-
   const { error } = await admin
-    .from("platform_settings")
-    .update({ value, updated_by: profile.id, updated_at: new Date().toISOString() })
-    .eq("key", key);
+    .from("formule_configs")
+    .update({
+      commission_bps: params.commissionBps,
+      draw_delay_hours: params.drawDelayHours,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("mode", params.mode)
+    .eq("formule_amount", params.formuleAmount);
 
   if (error) throw new Error(error.message);
 
   await logAdminAction({
     actorId: profile.id,
-    action: "platform_settings.update",
-    entityType: "platform_settings",
-    afterData: { key, value },
+    action: "formule_configs.update",
+    entityType: "formule_configs",
+    afterData: params,
   });
 
   revalidatePath("/pouri/parametres");

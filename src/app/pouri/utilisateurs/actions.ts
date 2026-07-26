@@ -10,41 +10,42 @@ import { accountStatusChangedEmail } from "@/lib/email/templates";
 import { getServerEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
-type AccountStatus = Database["public"]["Enums"]["account_status"];
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-export async function adminSetUserStatus(userId: string, status: AccountStatus) {
+// Pas de colonne profiles.status dans ce schéma : la suspension/le bannissement
+// se fait nativement via Supabase Auth (auth.users.banned_until), qui bloque
+// déjà la connexion sans contrôle applicatif séparé (cf. connexion-form.tsx).
+export async function adminSetUserBanned(userId: string, banned: boolean) {
   const { profile } = await requireAdmin();
 
-  if (userId === profile.id && status !== "active") {
+  if (userId === profile.id && banned) {
     throw new Error("Vous ne pouvez pas suspendre ou bannir votre propre compte.");
   }
 
   const admin = createAdminClient();
 
-  const { data: targetProfile, error } = await admin
-    .from("profiles")
-    .update({ status })
-    .eq("id", userId)
-    .select("email")
-    .single();
+  const { data: updated, error } = await admin.auth.admin.updateUserById(userId, {
+    ban_duration: banned ? "876000h" : "none",
+  });
   if (error) throw new Error(error.message);
 
   await logAdminAction({
     actorId: profile.id,
-    action: "user.set_status",
+    action: banned ? "user.ban" : "user.unban",
     entityType: "profiles",
     entityId: userId,
-    afterData: { status },
   });
 
-  if (targetProfile?.email) {
+  if (updated.user?.email) {
     const env = getServerEnv();
     await sendTransactionalEmail({
       userId,
-      toEmail: targetProfile.email,
-      templateKey: `account_status_${status}`,
-      template: accountStatusChangedEmail({ status, dashboardUrl: `${env.APP_BASE_URL}/tableau-de-bord` }),
+      toEmail: updated.user.email,
+      templateKey: banned ? "account_status_banned" : "account_status_active",
+      template: accountStatusChangedEmail({
+        status: banned ? "banned" : "active",
+        dashboardUrl: `${env.APP_BASE_URL}/tableau-de-bord`,
+      }),
     });
   }
 

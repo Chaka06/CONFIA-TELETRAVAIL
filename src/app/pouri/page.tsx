@@ -10,15 +10,26 @@ export default async function AdminOverviewPage() {
   await requireAdmin();
   const admin = createAdminClient();
 
-  const [{ count: totalUsers }, { count: activeBaskets }, { count: pendingPayouts }, { data: payoutSums }] =
+  const [{ count: totalUsers }, { count: openPaniers }, { count: pendingPayouts }, { data: paidClaims }] =
     await Promise.all([
       admin.from("profiles").select("*", { count: "exact", head: true }),
-      admin.from("tontine_basket_instances").select("*", { count: "exact", head: true }).eq("status", "active"),
-      admin.from("tontine_payouts").select("*", { count: "exact", head: true }).eq("status", "beneficiary_info_submitted"),
-      admin.from("tontine_payouts").select("amount").eq("status", "paid"),
+      admin.from("paniers").select("*", { count: "exact", head: true }).is("filled_at", null),
+      admin.from("payout_claims").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+      admin.from("payout_claims").select("panier_memberships(panier_id)").eq("status", "paid"),
     ]);
 
-  const totalPaidOut = (payoutSums ?? []).reduce((sum, p) => sum + p.amount, 0);
+  const paidPanierIds = (paidClaims ?? [])
+    .map((c) => c.panier_memberships?.panier_id)
+    .filter((id): id is string => !!id);
+  const uniquePanierIds = [...new Set(paidPanierIds)];
+
+  const { data: panierGains } =
+    uniquePanierIds.length > 0
+      ? await admin.from("paniers_public").select("id, gain_net_amount").in("id", uniquePanierIds)
+      : { data: [] as { id: string | null; gain_net_amount: number | null }[] };
+
+  const gainByPanierId = new Map((panierGains ?? []).map((p) => [p.id, p.gain_net_amount ?? 0]));
+  const totalPaidOut = paidPanierIds.reduce((sum, id) => sum + (gainByPanierId.get(id) ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -31,7 +42,7 @@ export default async function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Utilisateurs" value={String(totalUsers ?? 0)} icon={Users} />
-        <StatCard label="Paniers actifs" value={String(activeBaskets ?? 0)} icon={PiggyBank} />
+        <StatCard label="Paniers ouverts" value={String(openPaniers ?? 0)} icon={PiggyBank} />
         <StatCard
           label="Gains à verser"
           value={String(pendingPayouts ?? 0)}
