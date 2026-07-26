@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { joinBasketAndPay, TontineServiceError } from "@/lib/services/tontine";
 
 const bodySchema = z.object({
-  basketTypeId: z.string().uuid(),
+  panierId: z.string().uuid(),
 });
 
 export async function POST(request: Request) {
@@ -28,8 +28,9 @@ export async function POST(request: Request) {
 
   try {
     const { redirectUrl } = await joinBasketAndPay(supabase, {
-      basketTypeId: parsed.data.basketTypeId,
+      panierId: parsed.data.panierId,
       userId: user.id,
+      userEmail: user.email ?? "",
     });
     return NextResponse.json({ redirectUrl });
   } catch (err) {

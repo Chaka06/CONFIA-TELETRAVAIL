@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/tableau-de-bord", "/pouri", "/api", "/auth", "/bienvenue", "/gain", "/mes-cotisations"],
+      disallow: ["/tableau-de-bord", "/pouri", "/api", "/auth", "/bienvenue", "/gain"],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };

@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -81,6 +61,33 @@ export type Database = {
           },
         ]
       }
+      device_tokens: {
+        Row: {
+          created_at: string
+          fcm_token: string
+          id: string
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fcm_token: string
+          id?: string
+          platform: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fcm_token?: string
+          id?: string
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -115,15 +122,7 @@ export type Database = {
           to_email?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "email_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       email_verification_codes: {
         Row: {
@@ -164,482 +163,309 @@ export type Database = {
         }
         Relationships: []
       }
+      formule_configs: {
+        Row: {
+          capacity: number
+          commission_bps: number
+          draw_delay_hours: number
+          formule_amount: number
+          mode: Database["public"]["Enums"]["panier_mode"]
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          commission_bps: number
+          draw_delay_hours?: number
+          formule_amount: number
+          mode: Database["public"]["Enums"]["panier_mode"]
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          commission_bps?: number
+          draw_delay_hours?: number
+          formule_amount?: number
+          mode?: Database["public"]["Enums"]["panier_mode"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string
           created_at: string
           id: string
-          metadata: Json
+          payload: Json | null
           read_at: string | null
           title: string
-          type: Database["public"]["Enums"]["notification_type"]
+          type: string
           user_id: string
         }
         Insert: {
           body: string
           created_at?: string
           id?: string
-          metadata?: Json
+          payload?: Json | null
           read_at?: string | null
           title: string
-          type: Database["public"]["Enums"]["notification_type"]
+          type: string
           user_id: string
         }
         Update: {
           body?: string
           created_at?: string
           id?: string
-          metadata?: Json
+          payload?: Json | null
           read_at?: string | null
           title?: string
-          type?: Database["public"]["Enums"]["notification_type"]
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      panier_memberships: {
+        Row: {
+          amount_paid: number | null
+          checkout_url: string | null
+          created_at: string
+          geniuspay_reference: string | null
+          id: string
+          joined_at: string
+          joined_in_cycle: number
+          panier_id: string
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          checkout_url?: string | null
+          created_at?: string
+          geniuspay_reference?: string | null
+          id?: string
+          joined_at?: string
+          joined_in_cycle: number
+          panier_id: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          checkout_url?: string | null
+          created_at?: string
+          geniuspay_reference?: string | null
+          id?: string
+          joined_at?: string
+          joined_in_cycle?: number
+          panier_id?: string
+          status?: Database["public"]["Enums"]["membership_status"]
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "panier_memberships_panier_id_fkey"
+            columns: ["panier_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "my_paniers"
+            referencedColumns: ["panier_id"]
+          },
+          {
+            foreignKeyName: "panier_memberships_panier_id_fkey"
+            columns: ["panier_id"]
+            isOneToOne: false
+            referencedRelation: "paniers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "panier_memberships_panier_id_fkey"
+            columns: ["panier_id"]
+            isOneToOne: false
+            referencedRelation: "paniers_public"
             referencedColumns: ["id"]
           },
         ]
       }
-      platform_settings: {
+      paniers: {
         Row: {
-          description: string | null
-          key: string
-          updated_at: string
-          updated_by: string | null
-          value: Json
+          capacity: number
+          created_at: string
+          cycle_index: number
+          draw_at: string | null
+          filled_at: string | null
+          formule_amount: number
+          id: string
+          member_count: number
+          mode: Database["public"]["Enums"]["panier_mode"]
         }
         Insert: {
-          description?: string | null
-          key: string
-          updated_at?: string
-          updated_by?: string | null
-          value: Json
+          capacity: number
+          created_at?: string
+          cycle_index?: number
+          draw_at?: string | null
+          filled_at?: string | null
+          formule_amount: number
+          id?: string
+          member_count?: number
+          mode: Database["public"]["Enums"]["panier_mode"]
         }
         Update: {
-          description?: string | null
-          key?: string
-          updated_at?: string
-          updated_by?: string | null
-          value?: Json
+          capacity?: number
+          created_at?: string
+          cycle_index?: number
+          draw_at?: string | null
+          filled_at?: string | null
+          formule_amount?: number
+          id?: string
+          member_count?: number
+          mode?: Database["public"]["Enums"]["panier_mode"]
         }
         Relationships: [
           {
-            foreignKeyName: "platform_settings_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            foreignKeyName: "fk_paniers_formule"
+            columns: ["mode", "formule_amount"]
+            isOneToOne: true
+            referencedRelation: "formule_configs"
+            referencedColumns: ["mode", "formule_amount"]
+          },
+        ]
+      }
+      payout_claims: {
+        Row: {
+          admin_note: string | null
+          id: string
+          membership_id: string
+          mobile_money_number: string
+          mobile_money_provider: Database["public"]["Enums"]["mobile_money_provider"]
+          paid_at: string | null
+          status: Database["public"]["Enums"]["payout_claim_status"]
+          submitted_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          id?: string
+          membership_id: string
+          mobile_money_number: string
+          mobile_money_provider: Database["public"]["Enums"]["mobile_money_provider"]
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payout_claim_status"]
+          submitted_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          id?: string
+          membership_id?: string
+          mobile_money_number?: string
+          mobile_money_provider?: Database["public"]["Enums"]["mobile_money_provider"]
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payout_claim_status"]
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_claims_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: true
+            referencedRelation: "my_paniers"
+            referencedColumns: ["membership_id"]
+          },
+          {
+            foreignKeyName: "payout_claims_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: true
+            referencedRelation: "panier_memberships"
             referencedColumns: ["id"]
           },
         ]
       }
       profiles: {
         Row: {
+          birth_date: string
           city: string
           created_at: string
-          date_of_birth: string
-          email: string
-          email_verified_at: string | null
           first_name: string
           id: string
-          last_login_at: string | null
           last_name: string
-          phone_number: string
+          phone: string
           role: Database["public"]["Enums"]["app_role"]
-          status: Database["public"]["Enums"]["account_status"]
           updated_at: string
         }
         Insert: {
+          birth_date: string
           city: string
           created_at?: string
-          date_of_birth: string
-          email: string
-          email_verified_at?: string | null
           first_name: string
           id: string
-          last_login_at?: string | null
           last_name: string
-          phone_number: string
+          phone: string
           role?: Database["public"]["Enums"]["app_role"]
-          status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
         }
         Update: {
+          birth_date?: string
           city?: string
           created_at?: string
-          date_of_birth?: string
-          email?: string
-          email_verified_at?: string | null
           first_name?: string
           id?: string
-          last_login_at?: string | null
           last_name?: string
-          phone_number?: string
+          phone?: string
           role?: Database["public"]["Enums"]["app_role"]
-          status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
         }
         Relationships: []
-      }
-      tontine_basket_instances: {
-        Row: {
-          basket_type_id: string
-          created_at: string
-          filled_at: string | null
-          id: string
-          member_count: number
-          round_number: number
-          round_started_on: string | null
-          status: Database["public"]["Enums"]["basket_instance_status"]
-        }
-        Insert: {
-          basket_type_id: string
-          created_at?: string
-          filled_at?: string | null
-          id?: string
-          member_count?: number
-          round_number?: number
-          round_started_on?: string | null
-          status?: Database["public"]["Enums"]["basket_instance_status"]
-        }
-        Update: {
-          basket_type_id?: string
-          created_at?: string
-          filled_at?: string | null
-          id?: string
-          member_count?: number
-          round_number?: number
-          round_started_on?: string | null
-          status?: Database["public"]["Enums"]["basket_instance_status"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tontine_basket_instances_basket_type_id_fkey"
-            columns: ["basket_type_id"]
-            isOneToOne: false
-            referencedRelation: "tontine_basket_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tontine_basket_types: {
-        Row: {
-          capacity: number
-          commission_rate: number
-          contribution_amount: number
-          contributions_per_round: number
-          created_at: string
-          id: string
-          interval_days: number
-          is_active: boolean
-          label: string
-          payout_amount: number | null
-          round_length_days: number | null
-        }
-        Insert: {
-          capacity?: number
-          commission_rate?: number
-          contribution_amount: number
-          contributions_per_round?: number
-          created_at?: string
-          id?: string
-          interval_days: number
-          is_active?: boolean
-          label: string
-          payout_amount?: number | null
-          round_length_days?: number | null
-        }
-        Update: {
-          capacity?: number
-          commission_rate?: number
-          contribution_amount?: number
-          contributions_per_round?: number
-          created_at?: string
-          id?: string
-          interval_days?: number
-          is_active?: boolean
-          label?: string
-          payout_amount?: number | null
-          round_length_days?: number | null
-        }
-        Relationships: []
-      }
-      tontine_contributions: {
-        Row: {
-          amount: number
-          created_at: string
-          due_date: string
-          id: string
-          membership_id: string
-          occurrence_number: number
-          paid_at: string | null
-          payment_provider: string
-          provider_payload: Json
-          provider_reference: string | null
-          reminder_sent_at: string | null
-          round_number: number
-          status: Database["public"]["Enums"]["contribution_status"]
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          due_date: string
-          id?: string
-          membership_id: string
-          occurrence_number: number
-          paid_at?: string | null
-          payment_provider?: string
-          provider_payload?: Json
-          provider_reference?: string | null
-          reminder_sent_at?: string | null
-          round_number: number
-          status?: Database["public"]["Enums"]["contribution_status"]
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          due_date?: string
-          id?: string
-          membership_id?: string
-          occurrence_number?: number
-          paid_at?: string | null
-          payment_provider?: string
-          provider_payload?: Json
-          provider_reference?: string | null
-          reminder_sent_at?: string | null
-          round_number?: number
-          status?: Database["public"]["Enums"]["contribution_status"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tontine_contributions_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "tontine_memberships"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tontine_memberships: {
-        Row: {
-          basket_instance_id: string
-          id: string
-          join_order: number
-          joined_at: string
-          paid_out_at: string | null
-          removed_at: string | null
-          status: Database["public"]["Enums"]["membership_status"]
-          user_id: string
-        }
-        Insert: {
-          basket_instance_id: string
-          id?: string
-          join_order: number
-          joined_at?: string
-          paid_out_at?: string | null
-          removed_at?: string | null
-          status?: Database["public"]["Enums"]["membership_status"]
-          user_id: string
-        }
-        Update: {
-          basket_instance_id?: string
-          id?: string
-          join_order?: number
-          joined_at?: string
-          paid_out_at?: string | null
-          removed_at?: string | null
-          status?: Database["public"]["Enums"]["membership_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tontine_memberships_basket_instance_id_fkey"
-            columns: ["basket_instance_id"]
-            isOneToOne: false
-            referencedRelation: "tontine_basket_instances"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tontine_memberships_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tontine_payouts: {
-        Row: {
-          amount: number
-          basket_instance_id: string
-          beneficiary_payment_method: string | null
-          beneficiary_phone: string | null
-          beneficiary_submitted_at: string | null
-          beneficiary_token: string
-          confirmed_at: string | null
-          confirmed_by: string | null
-          created_at: string
-          id: string
-          membership_id: string
-          provider_reference: string | null
-          round_number: number
-          status: Database["public"]["Enums"]["payout_status"]
-        }
-        Insert: {
-          amount: number
-          basket_instance_id: string
-          beneficiary_payment_method?: string | null
-          beneficiary_phone?: string | null
-          beneficiary_submitted_at?: string | null
-          beneficiary_token?: string
-          confirmed_at?: string | null
-          confirmed_by?: string | null
-          created_at?: string
-          id?: string
-          membership_id: string
-          provider_reference?: string | null
-          round_number: number
-          status?: Database["public"]["Enums"]["payout_status"]
-        }
-        Update: {
-          amount?: number
-          basket_instance_id?: string
-          beneficiary_payment_method?: string | null
-          beneficiary_phone?: string | null
-          beneficiary_submitted_at?: string | null
-          beneficiary_token?: string
-          confirmed_at?: string | null
-          confirmed_by?: string | null
-          created_at?: string
-          id?: string
-          membership_id?: string
-          provider_reference?: string | null
-          round_number?: number
-          status?: Database["public"]["Enums"]["payout_status"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tontine_payouts_basket_instance_id_fkey"
-            columns: ["basket_instance_id"]
-            isOneToOne: false
-            referencedRelation: "tontine_basket_instances"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tontine_payouts_confirmed_by_fkey"
-            columns: ["confirmed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tontine_payouts_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "tontine_memberships"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      transactions: {
-        Row: {
-          amount: number
-          created_at: string
-          description: string
-          id: string
-          metadata: Json
-          reference_id: string | null
-          reference_table: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          description: string
-          id?: string
-          metadata?: Json
-          reference_id?: string | null
-          reference_table?: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          description?: string
-          id?: string
-          metadata?: Json
-          reference_id?: string | null
-          reference_table?: string | null
-          type?: Database["public"]["Enums"]["transaction_type"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
+      my_paniers: {
+        Row: {
+          capacity: number | null
+          checkout_url: string | null
+          display_status: string | null
+          draw_at: string | null
+          filled_at: string | null
+          formule_amount: number | null
+          gain_net_amount: number | null
+          joined_at: string | null
+          joined_in_cycle: number | null
+          member_count: number | null
+          membership_id: string | null
+          membership_status:
+            | Database["public"]["Enums"]["membership_status"]
+            | null
+          mode: Database["public"]["Enums"]["panier_mode"] | null
+          panier_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_paniers_formule"
+            columns: ["mode", "formule_amount"]
+            isOneToOne: true
+            referencedRelation: "formule_configs"
+            referencedColumns: ["mode", "formule_amount"]
+          },
+        ]
+      }
       paniers_public: {
         Row: {
-          id: string
-          mode: string
-          formule_amount: number
-          capacity: number
-          member_count: number
-          gain_net_amount: number
-          filled_at: string | null
+          capacity: number | null
           draw_at: string | null
+          filled_at: string | null
+          formule_amount: number | null
+          gain_net_amount: number | null
+          id: string | null
+          member_count: number | null
+          mode: Database["public"]["Enums"]["panier_mode"] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_paniers_formule"
+            columns: ["mode", "formule_amount"]
+            isOneToOne: true
+            referencedRelation: "formule_configs"
+            referencedColumns: ["mode", "formule_amount"]
+          },
+        ]
       }
     }
     Functions: {
-      admin_confirm_payout: {
-        Args: { p_payout_id: string; p_processed_by: string }
-        Returns: {
-          basket_instance_id: string
-          basket_label: string
-          email: string
-          first_name: string
-          user_id: string
-        }[]
-      }
-      fn_cancel_failed_join: {
-        Args: { p_contribution_id: string }
-        Returns: undefined
-      }
-      fn_confirm_contribution: {
-        Args: {
-          p_contribution_id: string
-          p_paid_amount: number
-          p_provider_reference: string
-        }
-        Returns: {
-          basket_instance_id: string
-          basket_label: string
-          became_full: boolean
-          beneficiary_token: string
-          capacity: number
-          member_count: number
-          payout_amount: number
-          payout_id: string
-          winner_email: string
-          winner_first_name: string
-          winner_user_id: string
-        }[]
-      }
       fn_claim_signup_otp_attempt: {
         Args: { p_code_id: string }
         Returns: {
@@ -649,52 +475,33 @@ export type Database = {
           max_attempts: number
         }[]
       }
-      fn_daily_tontine_sweep: { Args: never; Returns: Json }
-      is_admin: { Args: never; Returns: boolean }
-      is_super_admin: { Args: never; Returns: boolean }
-      join_basket: {
-        Args: { p_basket_type_id: string }
+      get_geniuspay_secrets: {
+        Args: never
         Returns: {
-          amount: number
-          basket_instance_id: string
-          contribution_id: string
-          membership_id: string
+          name: string
+          secret: string
         }[]
       }
-      submit_payout_beneficiary_info: {
-        Args: { p_payment_method: string; p_phone: string; p_token: string }
-        Returns: undefined
-      }
+      get_panier_detail: { Args: { p_panier_id: string }; Returns: Json }
+      run_scheduled_panier_draws: { Args: never; Returns: undefined }
     }
     Enums: {
-      account_status: "active" | "suspended" | "banned"
       app_role: "user" | "admin" | "super_admin"
-      basket_instance_status: "filling" | "active" | "paused" | "completed"
-      contribution_status: "pending" | "paid" | "missed"
       membership_status:
+        | "pending_payment"
         | "active"
-        | "removed_missed_payment"
-        | "paid_out_left"
-        | "cycle_completed"
-      notification_type:
-        | "basket_joined"
-        | "basket_full"
-        | "contribution_due"
-        | "contribution_confirmed"
-        | "member_removed"
-        | "spot_opened"
-        | "payout_ready"
-        | "payout_confirmed"
-        | "account_alert"
-        | "system"
-      payment_status:
-        | "pending"
-        | "confirmed"
-        | "failed"
-        | "cancelled"
-        | "expired"
-      payout_status: "pending" | "beneficiary_info_submitted" | "paid"
-      transaction_type: "contribution" | "payout" | "adjustment"
+        | "won_pending_claim"
+        | "won_pending_payout"
+        | "paid_out"
+        | "lost"
+        | "payment_failed"
+      mobile_money_provider:
+        | "orange_money"
+        | "wave"
+        | "mtn_money"
+        | "moov_money"
+      panier_mode: "normal" | "rush"
+      payout_claim_status: "submitted" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -820,43 +627,26 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
-      account_status: ["active", "suspended", "banned"],
       app_role: ["user", "admin", "super_admin"],
-      basket_instance_status: ["filling", "active", "paused", "completed"],
-      contribution_status: ["pending", "paid", "missed"],
       membership_status: [
+        "pending_payment",
         "active",
-        "removed_missed_payment",
-        "paid_out_left",
-        "cycle_completed",
+        "won_pending_claim",
+        "won_pending_payout",
+        "paid_out",
+        "lost",
+        "payment_failed",
       ],
-      notification_type: [
-        "basket_joined",
-        "basket_full",
-        "contribution_due",
-        "contribution_confirmed",
-        "member_removed",
-        "spot_opened",
-        "payout_ready",
-        "payout_confirmed",
-        "account_alert",
-        "system",
+      mobile_money_provider: [
+        "orange_money",
+        "wave",
+        "mtn_money",
+        "moov_money",
       ],
-      payment_status: [
-        "pending",
-        "confirmed",
-        "failed",
-        "cancelled",
-        "expired",
-      ],
-      payout_status: ["pending", "beneficiary_info_submitted", "paid"],
-      transaction_type: ["contribution", "payout", "adjustment"],
+      panier_mode: ["normal", "rush"],
+      payout_claim_status: ["submitted", "paid"],
     },
   },
 } as const
-

@@ -16,15 +16,34 @@ export class TontineServiceError extends Error {
   }
 }
 
+const ACTIVE_MEMBERSHIP_STATUSES = ["pending_payment", "active", "won_pending_claim", "won_pending_payout"] as const;
+
 /**
- * Rejoint un panier : crée l'adhésion + la cotisation d'entrée (RPC
- * `join_basket`, respecte RLS), puis ouvre immédiatement la session de
- * paiement Genius Pay pour ce dépôt d'entrée.
+ * Rejoint un panier : réserve une place (INSERT panier_memberships, validé
+ * par le trigger trg_reserve_panier_slot qui vérifie la capacité), puis
+ * ouvre immédiatement la session de paiement Genius Pay pour le dépôt
+ * unique. Modèle "paiement unique" : pas d'échéances ultérieures, une seule
+ * adhésion = un seul paiement.
  */
-export async function joinBasketAndPay(userClient: UserSupabaseClient, params: { basketTypeId: string; userId: string }) {
+export async function joinBasketAndPay(
+  userClient: UserSupabaseClient,
+  params: { panierId: string; userId: string; userEmail: string }
+) {
+  const { data: existing } = await userClient
+    .from("panier_memberships")
+    .select("id")
+    .eq("panier_id", params.panierId)
+    .eq("user_id", params.userId)
+    .in("status", ACTIVE_MEMBERSHIP_STATUSES)
+    .maybeSingle();
+
+  if (existing) {
+    throw new TontineServiceError("already_member_of_this_basket_type");
+  }
+
   const { data: profile, error: profileError } = await userClient
     .from("profiles")
-    .select("first_name, last_name, email, phone_number, status")
+    .select("first_name, last_name, phone")
     .eq("id", params.userId)
     .single();
 
@@ -32,107 +51,60 @@ export async function joinBasketAndPay(userClient: UserSupabaseClient, params: {
     throw new TontineServiceError("profile_not_found");
   }
 
-  const { data: joinResult, error: joinError } = await userClient
-    .rpc("join_basket", { p_basket_type_id: params.basketTypeId })
+  const { data: panier, error: panierError } = await userClient
+    .from("paniers")
+    .select("formule_amount")
+    .eq("id", params.panierId)
     .single();
 
-  if (joinError || !joinResult) {
-    throw new TontineServiceError(joinError?.message ?? "join_failed");
+  if (panierError || !panier) {
+    throw new TontineServiceError("panier_not_found");
   }
 
-  return initiateContributionPayment(userClient, {
-    contributionId: joinResult.contribution_id,
-    userId: params.userId,
-    profile,
-    onSessionFailure: async () => {
-      const admin = createAdminClient();
-      await admin.rpc("fn_cancel_failed_join", { p_contribution_id: joinResult.contribution_id });
-    },
-  });
-}
-
-/** Ouvre une session de paiement pour une cotisation déjà existante (échéances 2 à 5). */
-export async function initiateContributionPayment(
-  userClient: UserSupabaseClient,
-  params: {
-    contributionId: string;
-    userId: string;
-    profile?: { first_name: string; last_name: string; email: string; phone_number: string; status: string };
-    onSessionFailure?: () => Promise<void>;
-  }
-) {
-  let profile = params.profile;
-  if (!profile) {
-    const { data, error } = await userClient
-      .from("profiles")
-      .select("first_name, last_name, email, phone_number, status")
-      .eq("id", params.userId)
-      .single();
-    if (error || !data) throw new TontineServiceError("profile_not_found");
-    profile = data;
-  }
-
-  // Un compte suspendu ou banni ne peut plus payer de cotisation (défense en
-  // profondeur : join_basket bloque déjà l'entrée côté base, mais les
-  // échéances 2 à 5 passent uniquement par ici).
-  if (profile.status !== "active") {
-    throw new TontineServiceError("account_not_active");
-  }
-
-  const { data: contribution, error: contribError } = await userClient
-    .from("tontine_contributions")
-    .select("id, amount, status, membership_id, tontine_memberships!inner(user_id)")
-    .eq("id", params.contributionId)
+  const { data: membership, error: joinError } = await userClient
+    .from("panier_memberships")
+    // joined_in_cycle est écrasé par le trigger BEFORE INSERT
+    // trg_reserve_panier_slot (qui y place le vrai cycle_index) : la valeur
+    // fournie ici n'a aucune importance, seule sa présence satisfait le
+    // typage (colonne NOT NULL sans défaut déclaré côté schéma).
+    .insert({ panier_id: params.panierId, user_id: params.userId, joined_in_cycle: 0 })
+    .select("id")
     .single();
 
-  if (contribError || !contribution) {
-    throw new TontineServiceError("contribution_not_found");
-  }
-
-  // Vérification explicite du propriétaire, en défense en profondeur de la
-  // RLS : ne jamais se reposer uniquement sur la policy de la table pour
-  // empêcher un utilisateur de déclencher le paiement de la cotisation d'un
-  // autre (IDOR via un id de cotisation deviné/énuméré). Même message
-  // d'erreur que "introuvable" pour ne pas confirmer l'existence de l'id à
-  // un attaquant.
-  const ownerId = Array.isArray(contribution.tontine_memberships)
-    ? contribution.tontine_memberships[0]?.user_id
-    : contribution.tontine_memberships?.user_id;
-  if (ownerId !== params.userId) {
-    throw new TontineServiceError("contribution_not_found");
-  }
-
-  if (contribution.status !== "pending") {
-    throw new TontineServiceError("contribution_not_pending");
+  if (joinError || !membership) {
+    throw new TontineServiceError(joinError?.message?.includes("complet") ? "basket_full" : "join_failed");
   }
 
   const env = getServerEnv();
   const admin = createAdminClient();
 
   try {
-    const session = await getPaymentProvider().createContributionSession({
-      contributionId: contribution.id,
-      amount: contribution.amount,
+    const session = await getPaymentProvider().createMembershipSession({
+      membershipId: membership.id,
+      amount: panier.formule_amount,
       currency: "XOF",
-      description: `Cotisation Confssa — ${formatFcfa(contribution.amount)}`,
+      description: `Adhésion Confssa — ${formatFcfa(panier.formule_amount)}`,
       customer: {
         fullName: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
-        phoneNumber: profile.phone_number,
+        email: params.userEmail,
+        phoneNumber: profile.phone,
       },
-      successUrl: `${env.APP_BASE_URL}/tableau-de-bord?cotisation=${contribution.id}&statut=succes`,
-      errorUrl: `${env.APP_BASE_URL}/tableau-de-bord?cotisation=${contribution.id}&statut=echec`,
+      successUrl: `${env.APP_BASE_URL}/tableau-de-bord?panier=${params.panierId}&statut=succes`,
+      errorUrl: `${env.APP_BASE_URL}/tableau-de-bord?panier=${params.panierId}&statut=echec`,
     });
 
     await admin
-      .from("tontine_contributions")
-      .update({ provider_reference: session.providerReference })
-      .eq("id", contribution.id);
+      .from("panier_memberships")
+      .update({ checkout_url: session.redirectUrl, geniuspay_reference: session.providerReference })
+      .eq("id", membership.id);
 
-    return { contributionId: contribution.id, redirectUrl: session.redirectUrl };
+    return { membershipId: membership.id, redirectUrl: session.redirectUrl };
   } catch (err) {
     console.error("genius_pay_create_session_failed", err);
-    if (params.onSessionFailure) await params.onSessionFailure();
+    // Échec de création de session : on libère la place réservée
+    // immédiatement plutôt que de laisser une réservation morte occuper un
+    // slot de capacité indéfiniment.
+    await admin.from("panier_memberships").delete().eq("id", membership.id);
     throw new TontineServiceError("payment_session_failed");
   }
 }

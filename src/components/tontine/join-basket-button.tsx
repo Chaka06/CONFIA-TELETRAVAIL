@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
-export function JoinBasketButton({ basketTypeId, amount }: { basketTypeId: string; amount: string }) {
+export function JoinBasketButton({ panierId, amount }: { panierId: string; amount: string }) {
   const [pending, setPending] = React.useState(false);
 
   async function handleJoin() {
@@ -15,7 +15,7 @@ export function JoinBasketButton({ basketTypeId, amount }: { basketTypeId: strin
       const res = await fetch("/api/tontine/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ basketTypeId }),
+        body: JSON.stringify({ panierId }),
       });
 
       const body = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string };

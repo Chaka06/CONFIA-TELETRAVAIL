@@ -12,6 +12,10 @@ import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
  *
  * Protégé par un secret partagé distinct (ADMIN_BOOTSTRAP_SECRET) plutôt que
  * par une session admin, puisqu'aucun admin n'existe encore au premier appel.
+ *
+ * profiles n'a pas de colonne email (elle vit uniquement dans auth.users) :
+ * l'idempotence passe donc par l'erreur email_exists de createUser plutôt
+ * que par une recherche préalable dans profiles.
  */
 export async function POST(request: Request) {
   const expectedSecret = process.env.ADMIN_BOOTSTRAP_SECRET;
@@ -29,20 +33,6 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const { data: existing } = await admin
-    .from("profiles")
-    .select("id, role")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (existing) {
-    await admin.auth.admin.updateUserById(existing.id, { password, email_confirm: true });
-    if (existing.role !== "super_admin") {
-      await admin.from("profiles").update({ role: "super_admin" }).eq("id", existing.id);
-    }
-    return NextResponse.json({ success: true, action: "updated" });
-  }
-
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -50,14 +40,29 @@ export async function POST(request: Request) {
     user_metadata: {
       first_name: "Super",
       last_name: "Admin",
-      date_of_birth: "1990-01-01",
+      birth_date: "1990-01-01",
       city: "Abidjan",
-      phone_number: "+2250000000000",
+      phone: "+2250000000000",
     },
   });
 
   if (createError || !created.user) {
-    return NextResponse.json({ error: "create_failed" }, { status: 500 });
+    if (createError?.code !== "email_exists") {
+      return NextResponse.json({ error: "create_failed" }, { status: 500 });
+    }
+
+    // Compte déjà existant : on le retrouve pour mettre à jour son mot de
+    // passe et son rôle plutôt que d'échouer.
+    const { data: existingUsers, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    const existing = existingUsers?.users.find((u) => u.email === email);
+
+    if (listError || !existing) {
+      return NextResponse.json({ error: "lookup_failed" }, { status: 500 });
+    }
+
+    await admin.auth.admin.updateUserById(existing.id, { password, email_confirm: true });
+    await admin.from("profiles").update({ role: "super_admin" }).eq("id", existing.id);
+    return NextResponse.json({ success: true, action: "updated" });
   }
 
   const { error: promoteError } = await admin

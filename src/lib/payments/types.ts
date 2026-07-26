@@ -9,8 +9,8 @@
  */
 
 export type PaymentSessionParams = {
-  /** Identifiant de la cotisation (public.tontine_contributions.id) — transmis en metadata. */
-  contributionId: string;
+  /** Identifiant de l'adhésion (public.panier_memberships.id) — transmis en metadata. */
+  membershipId: string;
   amount: number;
   currency: "XOF";
   customer: {
@@ -33,14 +33,14 @@ export type PaymentSession = {
 };
 
 export type PaymentWebhookEvent =
-  | { type: "contribution.confirmed"; contributionId: string; providerReference: string; amount: number; providerEventId: string }
-  | { type: "contribution.failed"; contributionId: string; providerReference: string; reason: string; providerEventId: string }
+  | { type: "membership.confirmed"; membershipId: string; providerReference: string; amount: number; providerEventId: string }
+  | { type: "membership.failed"; membershipId: string; providerReference: string; amount: number; reason: string; providerEventId: string }
   /** Événement reçu mais sans action métier à ce stade (ex: payment.initiated, payment.refunded). */
   | { type: "ignored"; rawEvent: string; providerEventId: string };
 
 export interface PaymentProvider {
-  /** Crée une session de paiement pour financer une cotisation (page de checkout hébergée). */
-  createContributionSession(params: PaymentSessionParams): Promise<PaymentSession>;
+  /** Crée une session de paiement pour financer une adhésion (page de checkout hébergée). */
+  createMembershipSession(params: PaymentSessionParams): Promise<PaymentSession>;
 
   /**
    * Vérifie l'authenticité et la fraîcheur d'un webhook entrant (signature

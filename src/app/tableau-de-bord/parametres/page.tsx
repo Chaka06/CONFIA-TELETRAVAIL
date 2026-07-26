@@ -13,7 +13,7 @@ export default async function ParametresPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, email, city, phone_number, created_at")
+    .select("first_name, last_name, city, phone, created_at")
     .eq("id", user.id)
     .single();
 
@@ -40,7 +40,7 @@ export default async function ParametresPage() {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Adresse e-mail</Label>
-            <p className="mt-1 text-sm font-medium">{profile?.email}</p>
+            <p className="mt-1 text-sm font-medium">{user.email}</p>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Ville</Label>
@@ -48,7 +48,7 @@ export default async function ParametresPage() {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Téléphone</Label>
-            <p className="mt-1 text-sm font-medium">{profile?.phone_number}</p>
+            <p className="mt-1 text-sm font-medium">{profile?.phone}</p>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Membre depuis</Label>

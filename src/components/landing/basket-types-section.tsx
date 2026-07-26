@@ -7,11 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 type BasketType = {
   id: string;
-  label: string;
-  contribution_amount: number;
-  interval_days: number;
-  round_length_days: number | null;
-  payout_amount: number | null;
+  formule_amount: number;
+  gain_net_amount: number | null;
 };
 
 export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] }) {
@@ -62,11 +59,11 @@ export function BasketTypesSection({ basketTypes }: { basketTypes: BasketType[] 
           {basketTypes.map((bt) => (
             <Card key={bt.id}>
               <CardHeader>
-                <CardTitle>{bt.label}</CardTitle>
-                <CardDescription>Dépôt unique de {formatFcfa(bt.contribution_amount)}.</CardDescription>
+                <CardTitle>Panier {formatFcfa(bt.formule_amount)}</CardTitle>
+                <CardDescription>Dépôt unique de {formatFcfa(bt.formule_amount)}.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-semibold text-primary">{formatFcfa(bt.payout_amount ?? 0)}</p>
+                <p className="text-2xl font-semibold text-primary">{formatFcfa(bt.gain_net_amount ?? 0)}</p>
                 <p className="text-xs text-muted-foreground">gain pour le gagnant</p>
               </CardContent>
             </Card>

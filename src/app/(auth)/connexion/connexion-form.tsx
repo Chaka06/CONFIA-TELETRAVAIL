@@ -54,24 +54,10 @@ export function ConnexionForm() {
       return;
     }
 
-    // Un compte suspendu ou banni ne doit pas pouvoir accéder à la
-    // plateforme : on referme immédiatement la session (ce qui efface le
-    // cookie côté navigateur, sans provoquer de boucle de redirection avec le
-    // proxy qui raisonne sur la seule présence du cookie).
-    const { data: profileRow } = await supabase
-      .from("profiles")
-      .select("status")
-      .eq("email", values.email)
-      .maybeSingle();
-
-    if (profileRow && profileRow.status !== "active") {
-      await supabase.auth.signOut();
-      setServerError(
-        "Ce compte est actuellement suspendu. Contactez le support pour plus d'informations."
-      );
-      return;
-    }
-
+    // Un compte suspendu/banni est déjà rejeté par Supabase Auth lui-même
+    // (auth.users.banned_until) : signInWithPassword échoue directement pour
+    // ces comptes, pas besoin d'un second contrôle applicatif ici (profiles
+    // n'a d'ailleurs pas de colonne de statut séparée).
     router.replace(getSafeRedirectPath(searchParams.get("redirect"), "/tableau-de-bord"));
     router.refresh();
   }

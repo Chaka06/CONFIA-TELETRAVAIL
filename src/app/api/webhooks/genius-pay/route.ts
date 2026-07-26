@@ -6,18 +6,28 @@ import {
   geniusPayProvider,
 } from "@/lib/payments/genius-pay";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getServerEnv } from "@/lib/env";
+import { formatFcfa } from "@/lib/format";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import { contributionConfirmedEmail, contributionFailedEmail, payoutReadyEmail } from "@/lib/email/templates";
-import { notifyBasketMemberJoined, notifyPayoutReady } from "@/lib/telegram";
+import { contributionConfirmedEmail, contributionFailedEmail } from "@/lib/email/templates";
+import { notifyBasketMemberJoined } from "@/lib/telegram";
 
 export const maxDuration = 30;
 
 /**
- * Webhook Genius Pay — seul point d'entrée qui peut confirmer une cotisation
- * de tontine. Sécurité : signature HMAC vérifiée (fenêtre anti-rejeu de 5
- * minutes) avant tout traitement ; idempotence garantie par les fonctions
- * RPC elles-mêmes (rejouer un événement ne déclenche jamais deux fois un gain).
+ * Webhook Genius Pay — seul point d'entrée qui peut confirmer une adhésion à
+ * un panier. Sécurité : signature HMAC vérifiée (fenêtre anti-rejeu de 5
+ * minutes) avant tout traitement.
+ *
+ * Modèle "paiement unique" : confirmer un paiement passe panier_memberships
+ * en status='active' ; le trigger trg_sync_panier_membership_status
+ * recalcule alors member_count et programme la date de tirage (draw_at) si
+ * le panier vient d'être complété. Le tirage du gagnant lui-même est fait
+ * séparément par run_scheduled_panier_draws (cron), jamais ici — remplir un
+ * panier et désigner un gagnant ne sont plus le même instant dans ce modèle.
+ *
+ * Idempotence : la confirmation ne s'applique que si le statut est encore
+ * 'pending_payment' (WHERE explicite), donc rejouer un événement déjà traité
+ * ne fait rien la deuxième fois.
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -38,107 +48,77 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const env = getServerEnv();
 
   switch (event.type) {
-    case "contribution.confirmed": {
-      // fn_confirm_contribution fait tout de façon synchrone : marque la
-      // cotisation payée, incrémente member_count, et si c'est le 20e paiement
-      // détermine le gagnant, crée le gain, clôt les autres membres et
-      // garantit une instance 'filling' neuve. Idempotent en cas de rejeu.
-      const { data: result, error } = await admin
-        .rpc("fn_confirm_contribution", {
-          p_contribution_id: event.contributionId,
-          p_provider_reference: event.providerReference,
-          p_paid_amount: event.amount,
-        })
-        .single();
+    case "membership.confirmed": {
+      const { data: updated, error } = await admin
+        .from("panier_memberships")
+        .update({ status: "active", amount_paid: event.amount })
+        .eq("id", event.membershipId)
+        .eq("geniuspay_reference", event.providerReference)
+        .eq("status", "pending_payment")
+        .select("id, user_id, panier_id")
+        .maybeSingle();
 
       if (error) {
-        // amount_mismatch : le montant reçu ne correspond pas à l'échéance
-        // attendue — signalé bruyamment plutôt que validé silencieusement.
-        console.error("fn_confirm_contribution_failed", error);
+        console.error("membership_confirm_failed", error);
         return NextResponse.json({ error: "processing_failed" }, { status: 500 });
       }
 
-      // Rejeu déjà traité (aucune instance renvoyée) : ne rien renotifier.
-      if (!result?.basket_instance_id) break;
+      // Rejeu déjà traité (référence ne matche plus aucune ligne pending) :
+      // ne rien renotifier.
+      if (!updated) break;
 
-      const { data: contribution } = await admin
-        .from("tontine_contributions")
-        .select("amount, membership_id, tontine_memberships(user_id)")
-        .eq("id", event.contributionId)
-        .single();
+      const [{ data: authUser }, { data: panier }] = await Promise.all([
+        admin.auth.admin.getUserById(updated.user_id),
+        admin.from("paniers").select("formule_amount, member_count, capacity").eq("id", updated.panier_id).single(),
+      ]);
 
-      const userId = contribution?.tontine_memberships?.user_id;
-      if (userId) {
-        const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).single();
-        if (profile) {
-          await sendTransactionalEmail({
-            userId,
-            toEmail: profile.email,
-            templateKey: "contribution_confirmed",
-            template: contributionConfirmedEmail({ amount: contribution!.amount }),
-          });
-        }
-      }
-
-      // À chaque adhésion payée : on annonce le nouveau compte dans le groupe.
-      await notifyBasketMemberJoined({
-        basketLabel: result.basket_label ?? "Panier",
-        memberCount: result.member_count ?? 0,
-        capacity: result.capacity ?? 0,
-      });
-
-      // 20e paiement : le panier est complet et le gagnant est déterminé au
-      // même instant. On prévient le gagnant (e-mail + Telegram).
-      if (result.became_full && result.winner_email && result.beneficiary_token) {
+      if (authUser?.user?.email) {
         await sendTransactionalEmail({
-          userId: result.winner_user_id ?? null,
-          toEmail: result.winner_email,
-          templateKey: "payout_ready",
-          template: payoutReadyEmail({
-            basketLabel: result.basket_label ?? "Panier",
-            amount: result.payout_amount ?? 0,
-            claimUrl: `${env.APP_BASE_URL}/gain/${result.beneficiary_token}`,
-          }),
-        });
-
-        await notifyPayoutReady({
-          basketLabel: result.basket_label ?? "Panier",
-          firstName: result.winner_first_name ?? "",
-          amount: result.payout_amount ?? 0,
+          userId: updated.user_id,
+          toEmail: authUser.user.email,
+          templateKey: "contribution_confirmed",
+          template: contributionConfirmedEmail({ amount: event.amount }),
         });
       }
+
+      if (panier) {
+        await notifyBasketMemberJoined({
+          basketLabel: `Panier ${formatFcfa(panier.formule_amount)}`,
+          memberCount: panier.member_count,
+          capacity: panier.capacity,
+        });
+      }
+
       break;
     }
-    case "contribution.failed": {
-      const { data: contribution } = await admin
-        .from("tontine_contributions")
-        .select("amount, occurrence_number, membership_id, tontine_memberships(user_id)")
-        .eq("id", event.contributionId)
-        .single();
+    case "membership.failed": {
+      const { data: membership } = await admin
+        .from("panier_memberships")
+        .select("id, user_id")
+        .eq("id", event.membershipId)
+        .eq("geniuspay_reference", event.providerReference)
+        .eq("status", "pending_payment")
+        .maybeSingle();
 
-      // Une échéance d'entrée (n°1) échouée annule l'adhésion : elle n'a
-      // encore rien coûté à personne d'autre. Une échéance ultérieure
-      // échouée reste "pending" — le membre peut réessayer avant le
-      // balayage quotidien qui le retirera s'il n'a toujours pas payé.
-      if (contribution?.occurrence_number === 1) {
-        await admin.rpc("fn_cancel_failed_join", { p_contribution_id: event.contributionId });
+      if (!membership) break;
+
+      // Échec de paiement sur une adhésion jamais confirmée : on libère la
+      // place réservée immédiatement plutôt que de laisser une réservation
+      // morte occuper un slot de capacité.
+      await admin.from("panier_memberships").delete().eq("id", membership.id);
+
+      const { data: authUser } = await admin.auth.admin.getUserById(membership.user_id);
+      if (authUser?.user?.email) {
+        await sendTransactionalEmail({
+          userId: membership.user_id,
+          toEmail: authUser.user.email,
+          templateKey: "contribution_failed",
+          template: contributionFailedEmail({ amount: event.amount, reason: event.reason }),
+        });
       }
 
-      const userId = contribution?.tontine_memberships?.user_id;
-      if (userId) {
-        const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).single();
-        if (profile) {
-          await sendTransactionalEmail({
-            userId,
-            toEmail: profile.email,
-            templateKey: "contribution_failed",
-            template: contributionFailedEmail({ amount: contribution!.amount, reason: event.reason }),
-          });
-        }
-      }
       break;
     }
     case "ignored":

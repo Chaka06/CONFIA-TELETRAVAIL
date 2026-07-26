@@ -104,7 +104,7 @@ class GeniusPayProvider implements PaymentProvider {
     return json.data;
   }
 
-  async createContributionSession(params: PaymentSessionParams): Promise<PaymentSession> {
+  async createMembershipSession(params: PaymentSessionParams): Promise<PaymentSession> {
     const data = await this.call<GeniusPayPaymentData>("/payments", {
       amount: params.amount,
       currency: params.currency,
@@ -116,7 +116,7 @@ class GeniusPayProvider implements PaymentProvider {
       },
       success_url: params.successUrl,
       error_url: params.errorUrl,
-      metadata: { contribution_id: params.contributionId },
+      metadata: { membership_id: params.membershipId },
     });
 
     const redirectUrl = data.checkout_url ?? data.payment_url;
@@ -153,11 +153,11 @@ class GeniusPayProvider implements PaymentProvider {
 
     switch (payload.event) {
       case "payment.success": {
-        const contributionId = metadata.contribution_id as string | undefined;
-        if (!contributionId) throw new Error("Webhook payment.success sans metadata.contribution_id");
+        const membershipId = metadata.membership_id as string | undefined;
+        if (!membershipId) throw new Error("Webhook payment.success sans metadata.membership_id");
         return {
-          type: "contribution.confirmed",
-          contributionId,
+          type: "membership.confirmed",
+          membershipId,
           providerReference: payload.data.reference,
           amount: payload.data.amount,
           providerEventId: payload.id,
@@ -166,12 +166,13 @@ class GeniusPayProvider implements PaymentProvider {
       case "payment.failed":
       case "payment.cancelled":
       case "payment.expired": {
-        const contributionId = metadata.contribution_id as string | undefined;
-        if (!contributionId) throw new Error(`Webhook ${payload.event} sans metadata.contribution_id`);
+        const membershipId = metadata.membership_id as string | undefined;
+        if (!membershipId) throw new Error(`Webhook ${payload.event} sans metadata.membership_id`);
         return {
-          type: "contribution.failed",
-          contributionId,
+          type: "membership.failed",
+          membershipId,
           providerReference: payload.data.reference,
+          amount: payload.data.amount,
           reason: payload.data.failure_reason ?? payload.event,
           providerEventId: payload.id,
         };

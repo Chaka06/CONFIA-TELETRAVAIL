@@ -16,26 +16,19 @@ export default async function DashboardOverviewPage() {
 
   if (!user) return null;
 
-  const [{ count: activeMemberships }, { data: nextDue }, { data: pendingPayouts }, { data: notifications }] =
+  // my_paniers est déjà scopée à l'utilisateur connecté (WHERE user_id =
+  // auth.uid() dans la vue) : pas de .eq("user_id", ...) à ajouter.
+  const [{ count: activeMemberships }, { data: pendingDeposit }, { data: pendingPayouts }, { data: notifications }] =
     await Promise.all([
+      supabase.from("my_paniers").select("*", { count: "exact", head: true }).eq("membership_status", "active"),
       supabase
-        .from("tontine_memberships")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("status", "active"),
-      supabase
-        .from("tontine_contributions")
-        .select("due_date, amount, tontine_memberships!inner(user_id)")
-        .eq("tontine_memberships.user_id", user.id)
-        .eq("status", "pending")
-        .order("due_date", { ascending: true })
+        .from("my_paniers")
+        .select("formule_amount, checkout_url")
+        .eq("membership_status", "pending_payment")
+        .order("joined_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabase
-        .from("tontine_payouts")
-        .select("amount, status, tontine_memberships!inner(user_id)")
-        .eq("tontine_memberships.user_id", user.id)
-        .neq("status", "paid"),
+      supabase.from("my_paniers").select("membership_id").in("membership_status", ["won_pending_claim", "won_pending_payout"]),
       supabase
         .from("notifications")
         .select("*")
@@ -55,8 +48,8 @@ export default async function DashboardOverviewPage() {
         <StatCard label="Paniers actifs" value={String(activeMemberships ?? 0)} icon={PiggyBank} accent="default" />
         <StatCard
           label="Dépôt à régler"
-          value={nextDue ? formatFcfa(nextDue.amount) : "—"}
-          hint={nextDue ? "Dépôt d'entrée en attente" : "Aucun dépôt en attente"}
+          value={pendingDeposit ? formatFcfa(pendingDeposit.formule_amount ?? 0) : "—"}
+          hint={pendingDeposit ? "Dépôt d'adhésion en attente" : "Aucun dépôt en attente"}
           icon={CalendarClock}
           accent="warning"
         />

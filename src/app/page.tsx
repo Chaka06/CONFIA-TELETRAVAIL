@@ -17,11 +17,15 @@ export const revalidate = 300;
 
 export default async function HomePage() {
   const supabase = createPublicClient();
-  const { data: basketTypes } = await supabase
-    .from("tontine_basket_types")
-    .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount")
-    .eq("is_active", true)
-    .order("contribution_amount");
+  const { data: paniers } = await supabase
+    .from("paniers_public")
+    .select("id, formule_amount, gain_net_amount")
+    .eq("mode", "normal")
+    .order("formule_amount");
+
+  const basketTypes = (paniers ?? []).filter(
+    (p): p is { id: string; formule_amount: number; gain_net_amount: number | null } => !!p.id && p.formule_amount != null
+  );
 
   return (
     <div className="flex flex-1 flex-col">

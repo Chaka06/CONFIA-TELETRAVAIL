@@ -64,46 +64,61 @@ export async function requestSignupOtp(input: {
 }) {
   const admin = createAdminClient();
 
-  const { data: existingProfile } = await admin
-    .from("profiles")
-    .select("id, email_verified_at")
-    .eq("email", input.email)
-    .maybeSingle();
-
-  if (existingProfile) {
-    if (existingProfile.email_verified_at) {
-      throw new SignupOtpError("already_registered");
-    }
-    // Inscription précédente jamais confirmée (code jamais saisi) : on
-    // repart proprement d'un compte neuf plutôt que d'échouer.
-    const { error: deleteError } = await admin.auth.admin.deleteUser(existingProfile.id);
-    if (deleteError) throw new SignupOtpError("cleanup_failed");
-  }
-
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    email_confirm: false,
+  const metadata = {
+    first_name: input.firstName,
+    last_name: input.lastName,
     // Clés alignées sur ce que le trigger handle_new_user lit réellement
     // côté base (birth_date/phone, pas date_of_birth/phone_number) : un
     // désaccord de nom ici insère NULL dans des colonnes NOT NULL, ce qui
     // fait échouer la création du compte à chaque tentative, sans exception
     // : la contrainte fait échouer le trigger, qui annule tout l'INSERT
     // dans auth.users, donc createUser() renvoie une erreur générique.
-    user_metadata: {
-      first_name: input.firstName,
-      last_name: input.lastName,
-      birth_date: input.dateOfBirth,
-      city: input.city,
-      phone: input.phoneNumber,
-    },
+    birth_date: input.dateOfBirth,
+    city: input.city,
+    phone: input.phoneNumber,
+  };
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: false,
+    user_metadata: metadata,
   });
 
-  if (createError || !created.user) {
-    throw new SignupOtpError(createError?.code === "email_exists" ? "already_registered" : "signup_failed");
+  if (!createError && created.user) {
+    await issueCode(admin, created.user.id, input.email);
+    return;
   }
 
-  await issueCode(admin, created.user.id, input.email);
+  if (createError?.code !== "email_exists") {
+    throw new SignupOtpError("signup_failed");
+  }
+
+  // profiles n'a pas de colonne email : l'unicité se vérifie via
+  // auth.users, pas via une pré-recherche dans profiles.
+  const { data: existingUsers } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const existing = existingUsers?.users.find((u) => u.email === input.email);
+
+  if (!existing) throw new SignupOtpError("signup_failed");
+  if (existing.email_confirmed_at) throw new SignupOtpError("already_registered");
+
+  // Inscription précédente jamais confirmée (code jamais saisi) : on repart
+  // proprement d'un compte neuf plutôt que d'échouer.
+  const { error: deleteError } = await admin.auth.admin.deleteUser(existing.id);
+  if (deleteError) throw new SignupOtpError("cleanup_failed");
+
+  const { data: recreated, error: recreateError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: false,
+    user_metadata: metadata,
+  });
+
+  if (recreateError || !recreated.user) {
+    throw new SignupOtpError("signup_failed");
+  }
+
+  await issueCode(admin, recreated.user.id, input.email);
 }
 
 export async function resendSignupOtp(email: string) {

@@ -52,33 +52,35 @@ export default async function PaniersPage() {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {(paniers ?? []).map((p) => (
-              <Card key={p.id}>
-                <CardHeader>
-                  <CardTitle>Panier {formatFcfa(p.formule_amount)}</CardTitle>
-                  <CardDescription>
-                    Un dépôt unique de {formatFcfa(p.formule_amount)} à l&apos;adhésion.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg bg-primary/5 p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Gain à terme</p>
-                    <p className="text-xl font-semibold text-primary">{formatFcfa(p.gain_net_amount ?? 0)}</p>
-                  </div>
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Users className="size-3.5" aria-hidden />
-                    {p.member_count ?? 0}/{p.capacity ?? 20} membres
-                  </p>
-                  {user ? (
-                    <JoinBasketButton basketTypeId={p.id} amount={formatFcfa(p.formule_amount)} />
-                  ) : (
-                    <Button render={<Link href={`/inscription?panier=${p.id}`} />} nativeButton={false} className="w-full">
-                      Se connecter pour rejoindre
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            {(paniers ?? [])
+              .filter((p): p is typeof p & { id: string; formule_amount: number } => !!p.id && p.formule_amount != null)
+              .map((p) => (
+                <Card key={p.id}>
+                  <CardHeader>
+                    <CardTitle>Panier {formatFcfa(p.formule_amount)}</CardTitle>
+                    <CardDescription>
+                      Un dépôt unique de {formatFcfa(p.formule_amount)} à l&apos;adhésion.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg bg-primary/5 p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Gain à terme</p>
+                      <p className="text-xl font-semibold text-primary">{formatFcfa(p.gain_net_amount ?? 0)}</p>
+                    </div>
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Users className="size-3.5" aria-hidden />
+                      {p.member_count ?? 0}/{p.capacity ?? 20} membres
+                    </p>
+                    {user ? (
+                      <JoinBasketButton panierId={p.id} amount={formatFcfa(p.formule_amount)} />
+                    ) : (
+                      <Button render={<Link href={`/inscription?panier=${p.id}`} />} nativeButton={false} className="w-full">
+                        Se connecter pour rejoindre
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </div>
       </main>
