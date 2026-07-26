@@ -109,55 +109,43 @@ export async function requestSignupOtp(input: {
 export async function resendSignupOtp(email: string) {
   const admin = createAdminClient();
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("id, email_verified_at")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (!profile || profile.email_verified_at) {
-    throw new SignupOtpError("not_pending");
-  }
-
+  // profiles n'a pas de colonne email/email_verified_at en prod : on
+  // retrouve l'inscription en attente directement via email_verification_
+  // codes (qui, elle, stocke l'e-mail), pas via profiles.
   const { data: lastCode } = await admin
     .from("email_verification_codes")
-    .select("created_at")
-    .eq("user_id", profile.id)
+    .select("id, user_id, created_at, consumed_at")
+    .eq("email", email)
     .eq("purpose", "signup")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (lastCode && Date.now() - new Date(lastCode.created_at).getTime() < RESEND_COOLDOWN_MS) {
+  if (!lastCode || lastCode.consumed_at) {
+    throw new SignupOtpError("not_pending");
+  }
+
+  if (Date.now() - new Date(lastCode.created_at).getTime() < RESEND_COOLDOWN_MS) {
     throw new SignupOtpError("cooldown");
   }
 
   await admin
     .from("email_verification_codes")
     .update({ consumed_at: new Date().toISOString() })
-    .eq("user_id", profile.id)
-    .eq("purpose", "signup")
-    .is("consumed_at", null);
+    .eq("id", lastCode.id);
 
-  await issueCode(admin, profile.id, email);
+  await issueCode(admin, lastCode.user_id, email);
 }
 
 export async function verifySignupOtp(email: string, code: string): Promise<{ tokenHash: string }> {
   const admin = createAdminClient();
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("id, email_verified_at")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (!profile) throw new SignupOtpError("not_found");
-  if (profile.email_verified_at) throw new SignupOtpError("already_verified");
-
+  // Même raison que resendSignupOtp : on cherche l'inscription en attente
+  // via email_verification_codes, profiles n'ayant pas de colonne email.
   const { data: row } = await admin
     .from("email_verification_codes")
-    .select("id")
-    .eq("user_id", profile.id)
+    .select("id, user_id")
+    .eq("email", email)
     .eq("purpose", "signup")
     .is("consumed_at", null)
     .order("created_at", { ascending: false })
@@ -188,7 +176,7 @@ export async function verifySignupOtp(email: string, code: string): Promise<{ to
     .update({ consumed_at: new Date().toISOString() })
     .eq("id", row.id);
 
-  await admin.auth.admin.updateUserById(profile.id, { email_confirm: true });
+  await admin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
 
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: "magiclink",
