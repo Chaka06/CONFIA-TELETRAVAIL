@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
 import {
   escapeTelegramHtml,
+  explainHowItWorksMessage,
   fetchBasketStatusLines,
   pickJoinEncouragement,
   pickSignupNudge,
@@ -18,6 +19,7 @@ const HELP_TEXT =
   "On est ensemble, wesh ! Voici ce que je sais faire 🙌\n\n" +
   "💰 /paniers — <i>remplissage des 4 formules</i>\n" +
   "🏆 /gagnant — <i>dernier gagnant connu</i>\n" +
+  "🤔 /comment — <i>comment ça marche, en détail</i>\n" +
   "🚀 /inscription — <i>créer ton compte, ça ne mord pas</i>\n" +
   "❓ /aide — <i>cette liste</i>";
 
@@ -94,6 +96,13 @@ export async function POST(request: Request) {
     }
   } else if (command === "/inscription" || command === "/inscrire" || command === "/rejoindre") {
     await sendTelegramMessageTo(chatId, pickSignupNudge());
+  } else if (
+    command === "/comment" ||
+    command === "/commentcamarche" ||
+    command === "/explication" ||
+    command === "/fonctionnement"
+  ) {
+    await sendTelegramMessageTo(chatId, explainHowItWorksMessage());
   } else if (command === "/aide" || command === "/start" || command === "/help") {
     await sendTelegramMessageTo(chatId, HELP_TEXT);
   }

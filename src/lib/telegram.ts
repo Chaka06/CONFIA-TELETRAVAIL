@@ -135,6 +135,26 @@ export function pickSignupNudge(): string {
 }
 
 /**
+ * Explication complète du principe, pour la commande /comment — reprend
+ * exactement les 4 étapes affichées sur la page d'accueil (section "Comment
+ * fonctionne la tontine"), reformulées avec le même ton que le reste du bot.
+ */
+export function explainHowItWorksMessage(): string {
+  return (
+    `🤔 <b>Comment ça marche, la famille ?</b>\n\n` +
+    `1️⃣ <b>Tu choisis un panier</b> (1 000 / 3 000 / 5 000 ou 10 000 FCFA) et tu fais <b>un seul dépôt</b> pour rejoindre — pas d'échéances après, pas de relance chaque mois 💪\n\n` +
+    `2️⃣ <b>Le panier se remplit</b> — 20 membres en mode normal, 10 en mode rush (plus rapide). Tu suis le compteur en temps réel ici et sur le site 👀\n\n` +
+    `3️⃣ <b>Le panier est complet, un gagnant est désigné :</b>\n` +
+    `   🥇 <i>Mode normal</i> : premier arrivé, premier servi — pas de tirage, juste l'ordre d'inscription\n` +
+    `   🎲 <i>Mode rush</i> : le gagnant est tiré au sort, mais ça va beaucoup plus vite\n\n` +
+    `4️⃣ <b>Le gagnant empoche 95% du montant total collecté</b> 💰 — il indique juste son numéro Orange Money/Wave/MTN/Moov Money sur son tableau de bord, et l'équipe Confssa vire l'argent 🚀\n\n` +
+    `C'est tout, wesh ! Simple, transparent, ordre de passage public, on est ensemble 🙌\n\n` +
+    `👉 Voir les paniers : ${JOIN_URL}\n` +
+    `👉 Créer un compte : ${SIGNUP_URL}`
+  );
+}
+
+/**
  * Ligne "🔸 Libellé / barre + compte + places restantes" pour une formule.
  * Partagée entre la commande /paniers (webhook) et la diffusion périodique
  * d'encouragement (cron), pour un rendu identique aux deux endroits.
