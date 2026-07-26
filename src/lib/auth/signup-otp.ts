@@ -84,12 +84,18 @@ export async function requestSignupOtp(input: {
     email: input.email,
     password: input.password,
     email_confirm: false,
+    // Clés alignées sur ce que le trigger handle_new_user lit réellement
+    // côté base (birth_date/phone, pas date_of_birth/phone_number) : un
+    // désaccord de nom ici insère NULL dans des colonnes NOT NULL, ce qui
+    // fait échouer la création du compte à chaque tentative, sans exception
+    // : la contrainte fait échouer le trigger, qui annule tout l'INSERT
+    // dans auth.users, donc createUser() renvoie une erreur générique.
     user_metadata: {
       first_name: input.firstName,
       last_name: input.lastName,
-      date_of_birth: input.dateOfBirth,
+      birth_date: input.dateOfBirth,
       city: input.city,
-      phone_number: input.phoneNumber,
+      phone: input.phoneNumber,
     },
   });
 
