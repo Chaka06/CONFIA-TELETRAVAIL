@@ -11,9 +11,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 
 const NAV_LINKS = [
-  { href: "#comment-ca-marche", label: "Comment ça marche" },
+  { href: "/#comment-ca-marche", label: "Comment ça marche" },
   { href: "/paniers", label: "Paniers" },
-  { href: "#securite", label: "Sécurité" },
+  { href: "/#securite", label: "Sécurité" },
 ];
 
 // Le cookie de session ne change pas pendant la durée de vie du composant

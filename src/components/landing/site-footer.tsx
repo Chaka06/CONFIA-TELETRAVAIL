@@ -18,7 +18,7 @@ export function SiteFooter() {
             <div>
               <p className="mb-3 font-medium text-foreground">Plateforme</p>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#comment-ca-marche" className="hover:text-foreground">Comment ça marche</a></li>
+                <li><a href="/#comment-ca-marche" className="hover:text-foreground">Comment ça marche</a></li>
                 <li><Link href="/paniers" className="hover:text-foreground">Paniers</Link></li>
               </ul>
             </div>
@@ -32,7 +32,7 @@ export function SiteFooter() {
             <div>
               <p className="mb-3 font-medium text-foreground">Confiance</p>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#securite" className="hover:text-foreground">Sécurité</a></li>
+                <li><a href="/#securite" className="hover:text-foreground">Sécurité</a></li>
                 <li>
                   <a href="mailto:contact@confssa.com" className="hover:text-foreground">
                     Réclamations &amp; contact
