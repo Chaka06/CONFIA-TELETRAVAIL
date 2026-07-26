@@ -21,7 +21,7 @@ import type {
  *    `checkout_url` hébergée (le client choisit Wave/Orange/MTN/carte...).
  *  - Genius Pay attribue lui-même la référence de transaction
  *    (`MTX-XXXXXXXXXX`) : la corrélation avec nos enregistrements
- *    (`tontine_contributions.id`) se fait exclusivement via le champ
+ *    (`panier_memberships.id`) se fait exclusivement via le champ
  *    `metadata`, renvoyé tel quel dans la réponse de création ET dans le webhook.
  *  - Signature de webhook : HMAC-SHA256(`timestamp` + "." + corps brut,
  *    secret), avec une fenêtre anti-rejeu de 5 minutes.

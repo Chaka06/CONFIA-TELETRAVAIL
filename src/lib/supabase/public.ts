@@ -7,7 +7,7 @@ import type { Database } from "@/types/database";
 
 /**
  * Client Supabase pour des lectures publiques en lecture seule (ex :
- * tontine_basket_types, référentiel visible de tous sans connexion),
+ * paniers_public, référentiel visible de tous sans connexion),
  * depuis un Server Component. Volontairement clé anonyme + RLS actif, et
  * surtout : ne touche jamais aux cookies. `createClient()` (@/lib/supabase/server)
  * appelle `cookies()` en interne, ce qui force Next.js à rendre la route

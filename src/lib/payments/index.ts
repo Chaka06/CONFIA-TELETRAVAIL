@@ -9,7 +9,7 @@ export * from "./types";
 /**
  * Point d'entrée unique du module paiement. Si un second agrégateur devait
  * être supporté (bascule, redondance), c'est ici — et uniquement ici — que
- * le choix serait arbitré (ex: via `platform_settings`).
+ * le choix serait arbitré.
  */
 export function getPaymentProvider(): PaymentProvider {
   return geniusPayProvider;
