@@ -21,33 +21,22 @@ export const revalidate = 30;
 export default async function PaniersPage() {
   const supabase = await createClient();
 
-  // Les trois lectures sont indépendantes (instances ne filtre pas par type de
-  // panier) : les paralléliser au lieu de les enchaîner évite d'attendre
-  // trois allers-retours réseau l'un après l'autre.
-  const [{ data: userData }, { data: basketTypes }, { data: instances }] = await Promise.all([
+  // paniers_public (vue) joint déjà paniers + formule_configs et calcule le
+  // gain net après commission : une formule = une ligne, pas besoin d'un
+  // second aller-retour pour recouper les instances entre elles. Seul le
+  // mode "normal" est proposé ici (20 membres, cf. le texte de la page) ; le
+  // mode "rush" existe en base mais n'est pas encore exposé dans cette UI.
+  const [{ data: userData }, { data: paniers }] = await Promise.all([
     supabase.auth.getUser(),
     supabase
-      .from("tontine_basket_types")
-      .select("id, label, contribution_amount, interval_days, round_length_days, payout_amount, capacity")
-      .eq("is_active", true)
-      .order("contribution_amount"),
-    supabase
-      .from("tontine_basket_instances")
-      .select("basket_type_id, member_count, created_at")
-      .eq("status", "filling")
-      .order("created_at", { ascending: true }),
+      .from("paniers_public")
+      .select("id, formule_amount, capacity, member_count, gain_net_amount")
+      .eq("mode", "normal")
+      .is("filled_at", null)
+      .order("formule_amount"),
   ]);
 
   const user = userData.user;
-
-  // Nombre de membres inscrits sur le panier en cours de remplissage de chaque
-  // formule (celui que rejoindra un nouvel arrivant : le plus ancien 'filling').
-  // On n'affiche JAMAIS qui est en tête de file ni la position d'un membre :
-  // seulement le compteur membres/capacité tant que le panier n'est pas plein.
-  const filledCount = (instances ?? []).reduce<Record<string, number>>((acc, i) => {
-    if (!(i.basket_type_id in acc)) acc[i.basket_type_id] = i.member_count;
-    return acc;
-  }, {});
 
   return (
     <div className="flex flex-1 flex-col">
@@ -63,27 +52,27 @@ export default async function PaniersPage() {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {(basketTypes ?? []).map((bt) => (
-              <Card key={bt.id}>
+            {(paniers ?? []).map((p) => (
+              <Card key={p.id}>
                 <CardHeader>
-                  <CardTitle>{bt.label}</CardTitle>
+                  <CardTitle>Panier {formatFcfa(p.formule_amount)}</CardTitle>
                   <CardDescription>
-                    Un dépôt unique de {formatFcfa(bt.contribution_amount)} à l&apos;adhésion.
+                    Un dépôt unique de {formatFcfa(p.formule_amount)} à l&apos;adhésion.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="rounded-lg bg-primary/5 p-3 text-center">
                     <p className="text-xs text-muted-foreground">Gain à terme</p>
-                    <p className="text-xl font-semibold text-primary">{formatFcfa(bt.payout_amount ?? 0)}</p>
+                    <p className="text-xl font-semibold text-primary">{formatFcfa(p.gain_net_amount ?? 0)}</p>
                   </div>
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Users className="size-3.5" aria-hidden />
-                    {filledCount[bt.id] ?? 0}/{bt.capacity ?? 20} membres
+                    {p.member_count ?? 0}/{p.capacity ?? 20} membres
                   </p>
                   {user ? (
-                    <JoinBasketButton basketTypeId={bt.id} amount={formatFcfa(bt.contribution_amount)} />
+                    <JoinBasketButton basketTypeId={p.id} amount={formatFcfa(p.formule_amount)} />
                   ) : (
-                    <Button render={<Link href={`/inscription?panier=${bt.id}`} />} nativeButton={false} className="w-full">
+                    <Button render={<Link href={`/inscription?panier=${p.id}`} />} nativeButton={false} className="w-full">
                       Se connecter pour rejoindre
                     </Button>
                   )}

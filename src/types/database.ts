@@ -591,7 +591,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      paniers_public: {
+        Row: {
+          id: string
+          mode: string
+          formule_amount: number
+          capacity: number
+          member_count: number
+          gain_net_amount: number
+          filled_at: string | null
+          draw_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_confirm_payout: {
