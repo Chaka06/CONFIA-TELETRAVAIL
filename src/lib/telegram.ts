@@ -5,6 +5,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 
 const SITE_URL = process.env.APP_BASE_URL ?? "https://confssa.com";
 const JOIN_URL = `${SITE_URL}/paniers`;
+const SIGNUP_URL = `${SITE_URL}/inscription`;
 
 /**
  * Échappe les caractères spéciaux du sous-ensemble HTML de Telegram, pour
@@ -81,6 +82,11 @@ const JOIN_ENCOURAGEMENTS = [
   "🔥 <i>Ça bouge sérieux ici, on est ensemble ! Chope ta place avant que ça parte</i> 🏃💨",
   "👀 <i>Encore quelques places, wesh la famille ! Fais vite fais vite</i> ⏱️",
   "💪 <i>Y'a pas drap, viens comme tu es — mais viens vite quand même</i> 😉",
+  "🚨 <i>Ça chauffe grave, la go/le gars ! Le panier n'attend personne</i> 🏃‍♀️💨",
+  "😎 <i>Tu connais le principe, on est ensemble ! Faut pas rater ça</i> 🙌",
+  "🗣️ <i>On dit que tu réfléchis trop, wesh ! Prends ta place et on en parle après</i> ⏳",
+  "🎯 <i>Nan mais franchement, ça va aller vite ! Bouge-toi un peu</i> 🚀",
+  "🤙 <i>Ambiance bon enfant ici, viens gonfler l'équipe</i> 👨‍👩‍👧‍👦🔥",
 ] as const;
 
 /** Exposée pour la commande /paniers du webhook (même ton, même relance). */
@@ -94,6 +100,10 @@ const PERIODIC_ENCOURAGEMENTS = [
   "Chaque nouveau membre rapproche tout le monde du prochain gagnant.",
   "Ne reste pas spectateur — le prochain gagnant, ça pourrait être toi.",
   "Un panier qui se remplit vite, c'est un gain qui tombe vite. On accélère ?",
+  "Wesh la famille, on relâche pas la pression, hein ! Chaque jour compte 💪",
+  "Ça sert à rien de regarder les autres gagner, la go/le gars. Bouge un peu 😏",
+  "Un ami à toi n'est pas encore dans le mouvement ? Traîne-le avec toi 🤝",
+  "Deuga aujourd'hui, deuga demain — mais faut être dedans pour en profiter 😉",
 ] as const;
 
 const WIN_CELEBRATIONS = [
@@ -101,7 +111,28 @@ const WIN_CELEBRATIONS = [
   "🙌 Nickel chrome, c'est carré ! Le nzassa est bien mérité 💸",
   "🎊 Ça c'est du sérieux, félicitations champion(ne) ! Profite bien 🙏",
   "🥳 Deuga confirmé ! Bravo, que ça continue comme ça 🔥",
+  "🕺 Aiyééé c'est carré ça, on est ensemble ! Que Dieu bénisse la suite 🙏✨",
+  "💃 Ça envoie sérieux ! Le compte n'a pas menti, félicitations la go/le gars 🎊💰",
+  "🔥 Nickel chrome, zéro palabre ! Le versement est en route 🚀💵",
+  "🥂 Aujourd'hui c'est ta fête, mon reup/ma go ! Profite grave 🎉🙌",
 ] as const;
+
+/**
+ * Relances invitant les non-inscrits à créer un compte — "de temps en
+ * temps" (pas à chaque diffusion, pour ne pas lasser un groupe où la
+ * majorité est déjà inscrite) : voir broadcastBasketsEncouragement.
+ */
+const SIGNUP_NUDGES = [
+  "🚀 <b>T'es pas encore avec nous ?</b> Aïe aïe aïe, tu rates le mouvement, la go/le gars ! Créer un compte prend 2 minutes chrono ⏱️✨",
+  "📲 <b>Nouveau ici ?</b> Un seul dépôt suffit pour entrer dans la danse. On est ensemble, viens comme tu es 🤝🔥",
+  "👥 <b>Un ami pas encore inscrit ?</b> Envoie-lui le lien, wesh ! Plus on est nombreux, plus vite ça tourne 🔄💰",
+  "🎁 <b>Toujours pas inscrit(e) ?</b> Ça ne coûte rien de tenter sa chance, la famille ! Deuga t'attend peut-être déjà 😉",
+] as const;
+
+/** Exposée pour la commande /inscription du webhook et la diffusion périodique. */
+export function pickSignupNudge(): string {
+  return `${pickRandom(SIGNUP_NUDGES)}\n\n👉 Créer un compte : ${SIGNUP_URL}`;
+}
 
 /**
  * Ligne "🔸 Libellé / barre + compte + places restantes" pour une formule.
@@ -176,11 +207,16 @@ export async function broadcastBasketsEncouragement(admin: ReturnType<typeof cre
   const lines = await fetchBasketStatusLines(admin);
   if (lines.length === 0) return;
 
+  // Une diffusion sur trois pousse l'inscription plutôt que la relance
+  // habituelle "rejoindre un panier" — de temps en temps seulement, pour ne
+  // pas lasser un groupe où la majorité est déjà inscrite.
+  const callToAction = Math.random() < (1 / 3) ? pickSignupNudge() : `👉 Rejoindre un panier : ${JOIN_URL}`;
+
   await sendTelegramMessage(
     `🔥 <b>Ça bouge sur Confssa !</b>\n\n` +
       `${lines.join("\n\n")}\n\n` +
       `<i>${pickRandom(PERIODIC_ENCOURAGEMENTS)}</i> 💰\n\n` +
-      `👉 Rejoindre un panier : ${JOIN_URL}`
+      callToAction
   );
 }
 

@@ -2,15 +2,23 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatFcfa } from "@/lib/format";
-import { escapeTelegramHtml, fetchBasketStatusLines, pickJoinEncouragement, sendTelegramMessageTo } from "@/lib/telegram";
+import {
+  escapeTelegramHtml,
+  fetchBasketStatusLines,
+  pickJoinEncouragement,
+  pickSignupNudge,
+  sendTelegramMessageTo,
+} from "@/lib/telegram";
 import { timingSafeStringEqual } from "@/lib/timing-safe-equal";
 
 export const maxDuration = 15;
 
 const HELP_TEXT =
   "🤖 <b>Confssa Tontine — Commandes</b>\n\n" +
+  "On est ensemble, wesh ! Voici ce que je sais faire 🙌\n\n" +
   "💰 /paniers — <i>remplissage des 4 formules</i>\n" +
   "🏆 /gagnant — <i>dernier gagnant connu</i>\n" +
+  "🚀 /inscription — <i>créer ton compte, ça ne mord pas</i>\n" +
   "❓ /aide — <i>cette liste</i>";
 
 /**
@@ -84,6 +92,8 @@ export async function POST(request: Request) {
           `✅ <i>Déjà versé</i>`
       );
     }
+  } else if (command === "/inscription" || command === "/inscrire" || command === "/rejoindre") {
+    await sendTelegramMessageTo(chatId, pickSignupNudge());
   } else if (command === "/aide" || command === "/start" || command === "/help") {
     await sendTelegramMessageTo(chatId, HELP_TEXT);
   }
